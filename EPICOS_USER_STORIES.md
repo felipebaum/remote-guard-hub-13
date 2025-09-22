@@ -522,3 +522,88 @@ Todos os arquivos relevantes estão mapeados com seus caminhos completos para fa
 
 *Documentação gerada em: $(date)*
 *Versão do projeto: 0.0.0*
+
+---
+
+## 📌 Backlog de User Stories (como Issues) com estimativas
+
+> Formato pronto para criação de issues. Cada história inclui critérios de aceite (checklist) e estimativa de esforço.
+
+### US-100 — Configurar banco e migrações iniciais (6–8h)
+- [ ] Provisionar PostgreSQL (dev/homolog)
+- [ ] Criar base de migrações e script único de execução
+- [ ] Habilitar extensões necessárias (`uuid-ossp`, `citext`)
+- [ ] Pipeline local para rodar migrações automaticamente
+
+### US-101 — Esquema de dados Integradores/Condomínios/SIP/Tokens (6–8h)
+- [ ] Criar tabelas conforme proposta (integrators, integrator_admins, buildings, building_sip_credentials, building_tokens)
+- [ ] Índice único: 1 token ativo por condomínio
+- [ ] Restrições: `cnpj` único; FKs com `ON DELETE CASCADE`
+- [ ] Triggers `updated_at`
+
+### US-102 — API Integradores (CRUD) com validação (8–12h)
+- [ ] Endpoints: POST/GET/GET:id/PATCH:id/DELETE:id
+- [ ] Validação CNPJ (14 dígitos); endereço obrigatório
+- [ ] Paginação e filtros básicos (nome)
+- [ ] Respostas 422 para dados inválidos
+
+### US-103 — API Condomínios (CRUD) vinculados ao Integrador (8–12h)
+- [ ] Endpoints: POST/GET/GET:id/PATCH:id/DELETE:id
+- [ ] Associação obrigatória ao `integrator_id`
+- [ ] Regras de ownership por integrador
+- [ ] Paginação e filtros (nome, integrador)
+
+### US-104 — API Credenciais SIP (criar/atualizar/ler segura) (8–12h)
+- [ ] Guardar `sip_host`, `sip_username`, `sip_password` (criptografado)
+- [ ] GET deve mascarar senha
+- [ ] Rotas protegidas com RBAC
+- [ ] Logs com masking
+
+### US-105 — API Tokens (gerar 20 A–Z0–9, revogar, histórico) (8–12h)
+- [ ] Gerar token 20 chars maiúsculos e dígitos
+- [ ] Garantir apenas 1 ativo por condomínio
+- [ ] Listar histórico com `created_at` e `revoked_at`
+- [ ] Revogação registra `revoked_at`
+
+### US-106 — Autenticação/Autorização Admin Integrador (10–14h)
+- [ ] Login + emissão de JWT
+- [ ] Escopo por `integrator_id`
+- [ ] Middleware RBAC nas rotas
+- [ ] Refresh token básico
+
+### US-107 — Frontend Integradores: criar com CNPJ/endereço (6–8h)
+- [ ] Conectar formulário de novo integrador à API
+- [ ] Estados de loading/erro + toasts
+- [ ] Atualizar listagem após criação
+
+### US-108 — Frontend Condomínios: criar/editar host/user/senha (8–12h)
+- [ ] Conectar diálogos de adicionar/editar às APIs
+- [ ] Mascarar senha no editar
+- [ ] Validações de campos e feedback visual
+
+### US-109 — Frontend Tokens: gerar/revogar + histórico com datas (6–8h)
+- [ ] Conectar modal às APIs (gerar, revogar, listar histórico)
+- [ ] Exibir datas de criação/revogação e destacar atual
+- [ ] Botão copiar para token atual e históricos
+
+### US-110 — Testes unitários e integração (10–14h)
+- [ ] Testes dos serviços: CNPJ, tokens, SIP
+- [ ] Testes de API principais (CRUD, regras)
+- [ ] Testes de UI críticos (modal tokens, formulários)
+
+### US-111 — Observabilidade e segurança básica (6–8h)
+- [ ] Logs estruturados e correlação
+- [ ] Masking de segredos (SIP/token)
+- [ ] Rate limit nos endpoints de token
+
+### US-112 — Deploy (homolog/prod) e pipeline (6–10h)
+- [ ] Scripts de build e migração
+- [ ] Variáveis de ambiente seguras
+- [ ] Deploy reproduzível e rollback simples
+
+### US-113 — UAT e hardening final (6–10h)
+- [ ] Rodada de validação com usuários-chave
+- [ ] Ajustes de UX e regras
+- [ ] Checklist final de aceite
+
+Total estimado: 96–144 horas (12–18 dias úteis).
