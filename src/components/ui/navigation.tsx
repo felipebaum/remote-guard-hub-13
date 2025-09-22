@@ -9,9 +9,6 @@ interface NavigationProps {
 const navigationItems = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   { id: "integradores", label: "Integradores", icon: Building },
-  { id: "usuarios-admin", label: "Admins Integradores", icon: UserCog },
-  { id: "usuarios", label: "Usuários Condomínios", icon: Users },
-  { id: "licencas", label: "Licenças", icon: Shield },
   // { id: "grupos-acesso", label: "Grupos de Acesso", icon: UserCheck }, // Removido: grupos de acesso não são mais necessários
   // { id: "configuracoes", label: "Configurações", icon: Settings }, // Comentado: configurações já existem por condomínio
 ];

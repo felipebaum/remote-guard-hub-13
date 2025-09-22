@@ -3,9 +3,6 @@ import { Header } from "@/components/Header";
 import { Navigation } from "@/components/ui/navigation";
 import Dashboard from "./Dashboard";
 import Integrators from "./Integrators";
-import AdminUsers from "./AdminUsers";
-import Users from "./Users";
-import Licenses from "./Licenses";
 // import AccessGroups from "./AccessGroups"; // Removido: grupos de acesso não são mais necessários
 // import Settings from "./Settings"; // Comentado: configurações já existem por condomínio
 import BuildingDetails from "./BuildingDetails";
@@ -37,14 +34,6 @@ const Index = () => {
         return <Dashboard />;
       case "integradores":
         return <Integrators />;
-      case "usuarios-admin":
-        return <AdminUsers />;
-      // case "grupos-acesso":
-      //   return <AccessGroups />; // Removido: grupos de acesso não são mais necessários
-      case "usuarios":
-        return <Users />;
-      case "licencas":
-        return <Licenses />;
       // case "configuracoes":
       //   return <Settings />; // Comentado: configurações já existem por condomínio
       default:

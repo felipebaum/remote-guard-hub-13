@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Building2, Users, Settings, Trash2, Edit, Phone } from "lucide-react";
+import { Plus, Building2, Users, Settings, Trash2, Edit, Phone, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const mockGroups = [
   {
@@ -65,6 +66,20 @@ export default function Integrators() {
   const [selectedIntegratorId, setSelectedIntegratorId] = useState<string | null>(null);
   const [isEditBuildingDialogOpen, setIsEditBuildingDialogOpen] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
+  const [isCreateAdminDialogOpen, setIsCreateAdminDialogOpen] = useState(false);
+  const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
+  const [tokenBuilding, setTokenBuilding] = useState<any>(null);
+  const [buildingTokens, setBuildingTokens] = useState<Record<string, string | null>>({});
+  const [buildingTokenHistory, setBuildingTokenHistory] = useState<Record<string, { token: string; createdAt: string; revokedAt?: string }[]>>({});
+
+  const generateUppercaseToken = (length: number = 20) => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let token = "";
+    for (let i = 0; i < length; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+  };
 
   const openCreateBuildingDialog = (integratorId: string) => {
     setSelectedIntegratorId(integratorId);
@@ -107,18 +122,14 @@ export default function Integrators() {
                 <Input id="groupDescription" placeholder="Descrição do integrador" />
               </div>
               <div>
-                <Label htmlFor="adminUser">Usuário Administrador</Label>
-                <Input id="adminUser" placeholder="Nome do administrador" />
+                <Label htmlFor="cnpj">CNPJ</Label>
+                <Input id="cnpj" placeholder="00.000.000/0000-00" />
               </div>
               <div>
-                <Label htmlFor="adminEmail">Email do Administrador</Label>
-                <Input id="adminEmail" type="email" placeholder="admin@exemplo.com" />
+                <Label htmlFor="address">Endereço Completo</Label>
+                <Textarea id="address" placeholder="Rua, número, bairro, cidade, UF, CEP" />
               </div>
-              <div>
-                <Label htmlFor="adminPassword">Senha Temporária</Label>
-                <Input id="adminPassword" type="password" placeholder="Senha temporária" />
-              </div>
-              <Button className="w-full">Criar Integrador e Admin</Button>
+              <Button className="w-full">Criar Integrador</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -139,20 +150,27 @@ export default function Integrators() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => openCreateBuildingDialog(integrator.id)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Condomínio
-                  </Button>
-                  <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => { setSelectedIntegratorId(integrator.id); setIsCreateBuildingDialogOpen(true); }}>
+                        <Plus className="h-4 w-4 mr-2" /> Novo Condomínio
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setSelectedIntegratorId(integrator.id); setIsCreateAdminDialogOpen(true); }}>
+                        <Users className="h-4 w-4 mr-2" /> Novo Admin
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Settings className="h-4 w-4 mr-2" /> Configurar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive">
+                        <Trash2 className="h-4 w-4 mr-2" /> Excluir Integrador
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </CardHeader>
@@ -197,6 +215,15 @@ export default function Integrators() {
                                     variant="ghost" 
                                     size="sm" 
                                     className="h-6 w-6 p-0"
+                                    title="Gerenciar token"
+                                    onClick={() => { setTokenBuilding(building); setIsTokenDialogOpen(true); }}
+                                  >
+                                    <Key className="h-3 w-3" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-6 w-6 p-0"
                                     onClick={() => window.open(`/?building=${building.id}`, '_self')}
                                   >
                                     <Building2 className="h-3 w-3" />
@@ -228,16 +255,6 @@ export default function Integrators() {
                     <span className="text-muted-foreground">Criado em:</span>
                     <span className="text-sm">{new Date(integrator.createdAt).toLocaleDateString('pt-BR')}</span>
                   </div>
-                  <div className="flex items-center gap-2 mt-3">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Users className="h-3 w-3 mr-1" />
-                      Novo Admin
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Settings className="h-3 w-3 mr-1" />
-                      Configurar
-                    </Button>
-                  </div>
                 </div>
               </div>
             </CardContent>
@@ -261,8 +278,16 @@ export default function Integrators() {
               <Textarea id="buildingAddress" placeholder="Endereço completo do condomínio" />
             </div>
             <div>
-              <Label htmlFor="sipAccount">Conta SIP (Opcional)</Label>
-              <Input id="sipAccount" placeholder="Ex: condominio@sip.defenseaccess.com" />
+              <Label htmlFor="sipHost">Host SIP</Label>
+              <Input id="sipHost" placeholder="Ex: sip.seuprovedor.com" />
+            </div>
+            <div>
+              <Label htmlFor="sipUser">Usuário SIP</Label>
+              <Input id="sipUser" placeholder="Ex: usuario@sip.seuprovedor.com" />
+            </div>
+            <div>
+              <Label htmlFor="sipPassword">Senha SIP</Label>
+              <Input id="sipPassword" type="password" placeholder="Senha da conta SIP" />
             </div>
             <Button className="w-full">Adicionar Condomínio</Button>
           </div>
@@ -293,11 +318,25 @@ export default function Integrators() {
               />
             </div>
             <div>
-              <Label htmlFor="editSipAccount">Conta SIP</Label>
+              <Label htmlFor="editSipHost">Host SIP</Label>
               <Input 
-                id="editSipAccount" 
-                value={selectedBuilding?.sipAccount || ""} 
-                placeholder="Ex: condominio@sip.defenseaccess.com" 
+                id="editSipHost" 
+                placeholder="Ex: sip.seuprovedor.com" 
+              />
+            </div>
+            <div>
+              <Label htmlFor="editSipUser">Usuário SIP</Label>
+              <Input 
+                id="editSipUser" 
+                placeholder="Ex: usuario@sip.seuprovedor.com" 
+              />
+            </div>
+            <div>
+              <Label htmlFor="editSipPassword">Senha SIP</Label>
+              <Input 
+                id="editSipPassword" 
+                type="password" 
+                placeholder="Senha da conta SIP" 
               />
             </div>
             <div className="flex gap-2">
@@ -310,6 +349,121 @@ export default function Integrators() {
                 Ver Detalhes
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para gerenciar token do condomínio */}
+      <Dialog open={isTokenDialogOpen} onOpenChange={setIsTokenDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerenciar Token do Condomínio</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Condomínio</Label>
+              <div className="text-sm font-medium mt-1">{tokenBuilding?.name || ""}</div>
+            </div>
+            <div>
+              <Label>Token atual</Label>
+              <Input
+                readOnly
+                value={buildingTokens[tokenBuilding?.id as string] || "Sem token gerado"}
+              />
+            </div>
+            <div>
+              <Label>Histórico de tokens</Label>
+              <div className="mt-2 max-h-40 overflow-auto border rounded-md p-2">
+                {(() => {
+                  const id = tokenBuilding?.id as string;
+                  const list = (id && buildingTokenHistory[id]) ? buildingTokenHistory[id] : [];
+                  if (!list.length) {
+                    return <div className="text-sm text-muted-foreground">Nenhum token gerado ainda.</div>;
+                  }
+                  const current = buildingTokens[id] || null;
+                  return (
+                    <ul className="space-y-2 text-sm">
+                      {list.map((entry, idx) => (
+                        <li key={`${entry.token}-${idx}`} className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="font-mono break-all">{entry.token}</div>
+                            <div className="text-xs text-muted-foreground">
+                              criado em {new Date(entry.createdAt).toLocaleString('pt-BR')}
+                              {entry.revokedAt && (
+                                <>
+                                  {" • "}revogado em {new Date(entry.revokedAt).toLocaleString('pt-BR')}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          {current === entry.token && <Badge variant="outline">Atual</Badge>}
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })()}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  if (!tokenBuilding?.id) return;
+                  const newToken = generateUppercaseToken(20);
+                  setBuildingTokens((prev) => ({ ...prev, [tokenBuilding.id]: newToken }));
+                  setBuildingTokenHistory((prev) => {
+                    const existing = prev[tokenBuilding.id] || [];
+                    const newEntry = { token: newToken, createdAt: new Date().toISOString() };
+                    return { ...prev, [tokenBuilding.id]: [newEntry, ...existing] };
+                  });
+                }}
+              >
+                Gerar Novo Token
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  if (!tokenBuilding?.id) return;
+                  const id = tokenBuilding.id as string;
+                  const current = buildingTokens[id];
+                  setBuildingTokens((prev) => ({ ...prev, [id]: null }));
+                  if (current) {
+                    setBuildingTokenHistory((prev) => {
+                      const existing = prev[id] || [];
+                      const updated = existing.map((e) => e.token === current && !e.revokedAt ? { ...e, revokedAt: new Date().toISOString() } : e);
+                      return { ...prev, [id]: updated };
+                    });
+                  }
+                }}
+              >
+                Revogar Token
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para criar Admin do Integrador */}
+      <Dialog open={isCreateAdminDialogOpen} onOpenChange={setIsCreateAdminDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo Admin do Integrador</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="adminName">Nome Completo</Label>
+              <Input id="adminName" placeholder="Nome do administrador" />
+            </div>
+            <div>
+              <Label htmlFor="adminEmail">Email</Label>
+              <Input id="adminEmail" type="email" placeholder="email@exemplo.com" />
+            </div>
+            <div>
+              <Label htmlFor="adminPassword">Senha</Label>
+              <Input id="adminPassword" type="password" placeholder="Senha temporária" />
+            </div>
+            <Button className="w-full">Criar Administrador</Button>
           </div>
         </DialogContent>
       </Dialog>
