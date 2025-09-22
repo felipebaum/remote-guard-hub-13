@@ -34,9 +34,7 @@ const mockGroups = [
       }
     ],
     totalUsers: 9,
-    onlineUsers: 6,
-    adminUser: "Admin Centro",
-    createdAt: "2024-01-15"
+    onlineUsers: 6
   },
   {
     id: "g2",
@@ -53,9 +51,7 @@ const mockGroups = [
       }
     ],
     totalUsers: 4,
-    onlineUsers: 3,
-    adminUser: "Admin Norte",
-    createdAt: "2024-02-20"
+    onlineUsers: 3
   }
 ];
 
@@ -68,7 +64,7 @@ export default function Integrators() {
   const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
   const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
   const [newUserType, setNewUserType] = useState<string>("");
-  const [newUserBuildingId, setNewUserBuildingId] = useState<string>("");
+  const [newUserBuildingIds, setNewUserBuildingIds] = useState<string[]>([]);
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [tokenBuilding, setTokenBuilding] = useState<any>(null);
   const [buildingTokens, setBuildingTokens] = useState<Record<string, string | null>>({});
@@ -76,6 +72,9 @@ export default function Integrators() {
   const [showUsersList, setShowUsersList] = useState(false);
   const [showBuildingsList, setShowBuildingsList] = useState(false);
   const [selectedIntegratorForList, setSelectedIntegratorForList] = useState<string | null>(null);
+  const [isTeamDialogOpen, setIsTeamDialogOpen] = useState(false);
+  const [teamByIntegrator, setTeamByIntegrator] = useState<Record<string, { id: string; name: string; email: string; role: string }[]>>({});
+  const [newTeamMember, setNewTeamMember] = useState<{ name: string; email: string; role: string }>({ name: "", email: "", role: "Admin Integrador" });
 
   const generateUppercaseToken = (length: number = 20) => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -167,12 +166,15 @@ export default function Integrators() {
                       <DropdownMenuItem onClick={() => { setSelectedIntegratorId(integrator.id); setIsCreateBuildingDialogOpen(true); }}>
                         <Plus className="h-4 w-4 mr-2" /> Novo Condomínio
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setSelectedIntegratorId(integrator.id); setIsCreateUserDialogOpen(true); setNewUserType(""); setNewUserBuildingId(""); }}>
+                      <DropdownMenuItem onClick={() => { setSelectedIntegratorId(integrator.id); setIsCreateUserDialogOpen(true); setNewUserType(""); setNewUserBuildingIds([]); }}>
                         <Users className="h-4 w-4 mr-2" /> Novo Usuário
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => { setSelectedIntegratorForList(integrator.id); setShowUsersList(true); }}>
                         <Users className="h-4 w-4 mr-2" /> Listar Usuários
                       </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => { setSelectedIntegratorId(integrator.id); setIsTeamDialogOpen(true); }}>
+            <Users className="h-4 w-4 mr-2" /> Gerenciar Equipe
+          </DropdownMenuItem>
                       <DropdownMenuItem>
                         <Settings className="h-4 w-4 mr-2" /> Configurar
                       </DropdownMenuItem>
@@ -306,16 +308,7 @@ export default function Integrators() {
                   </div>
                 )}
                 
-                <div className="pt-2 border-t">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Administrador:</span>
-                    <Badge variant="outline">{integrator.adminUser}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-muted-foreground">Criado em:</span>
-                    <span className="text-sm">{new Date(integrator.createdAt).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                </div>
+                {/* Seção de admin/criado em removida conforme solicitação */}
               </div>
             </CardContent>
           </Card>
@@ -369,6 +362,89 @@ export default function Integrators() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog para Gerenciar Equipe do Integrador */}
+      <Dialog open={isTeamDialogOpen} onOpenChange={setIsTeamDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Equipe do Integrador</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Membros</Label>
+              <div className="border rounded-md divide-y">
+                {(teamByIntegrator[selectedIntegratorId ?? ""] || []).length === 0 ? (
+                  <div className="p-3 text-sm text-muted-foreground">Nenhum membro cadastrado</div>
+                ) : (
+                  (teamByIntegrator[selectedIntegratorId ?? ""] || []).map((m) => (
+                    <div key={m.id} className="p-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{m.name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{m.email} • {m.role}</div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (!selectedIntegratorId) return;
+                          setTeamByIntegrator((prev) => ({
+                            ...prev,
+                            [selectedIntegratorId]: (prev[selectedIntegratorId] || []).filter((x) => x.id !== m.id)
+                          }));
+                        }}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Novo Membro</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <Input
+                  placeholder="Nome"
+                  value={newTeamMember.name}
+                  onChange={(e) => setNewTeamMember({ ...newTeamMember, name: e.target.value })}
+                />
+                <Input
+                  placeholder="Email"
+                  type="email"
+                  value={newTeamMember.email}
+                  onChange={(e) => setNewTeamMember({ ...newTeamMember, email: e.target.value })}
+                />
+                <Select value={newTeamMember.role} onValueChange={(v) => setNewTeamMember({ ...newTeamMember, role: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Função" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Admin Integrador">Admin Integrador</SelectItem>
+                    <SelectItem value="Atendimento">Atendimento</SelectItem>
+                    <SelectItem value="Supervisor">Supervisor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => {
+                    if (!selectedIntegratorId) return;
+                    if (!newTeamMember.name || !newTeamMember.email) return;
+                    const id = Math.random().toString(36).slice(2);
+                    setTeamByIntegrator((prev) => ({
+                      ...prev,
+                      [selectedIntegratorId]: [{ id, ...newTeamMember }, ...(prev[selectedIntegratorId] || [])]
+                    }));
+                    setNewTeamMember({ name: "", email: "", role: "Admin Integrador" });
+                  }}
+                >
+                  Adicionar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Dialog para editar condomínio */}
       <Dialog open={isEditBuildingDialogOpen} onOpenChange={setIsEditBuildingDialogOpen}>
         <DialogContent>
@@ -550,18 +626,37 @@ export default function Integrators() {
             </div>
             {newUserType === "Porteiro Remoto" && (
               <div>
-                <Label>Condomínio (opcional)</Label>
-                <Select value={newUserBuildingId} onValueChange={setNewUserBuildingId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos os condomínios" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todos os condomínios</SelectItem>
-                    {(integrators.find((i) => i.id === selectedIntegratorId)?.buildings || []).map((b: any) => (
-                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Condomínios com Acesso</Label>
+                <div className="text-sm text-muted-foreground mb-2">
+                  Selecione os condomínios ou deixe em branco para acesso a todos
+                </div>
+                <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                  {(integrators.find((i) => i.id === selectedIntegratorId)?.buildings || []).map((building: any) => (
+                    <div key={building.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`building-${building.id}`}
+                        checked={newUserBuildingIds.includes(building.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNewUserBuildingIds([...newUserBuildingIds, building.id]);
+                          } else {
+                            setNewUserBuildingIds(newUserBuildingIds.filter(id => id !== building.id));
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor={`building-${building.id}`} className="text-sm">
+                        {building.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                {newUserBuildingIds.length === 0 && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    ✓ Acesso a todos os condomínios
+                  </div>
+                )}
               </div>
             )}
             <Button className="w-full">Criar Usuário</Button>
