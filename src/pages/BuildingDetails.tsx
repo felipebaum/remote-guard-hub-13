@@ -166,7 +166,10 @@ export default function BuildingDetails({ buildingId, onBack }: BuildingDetailsP
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Adicionar Usuário ao Condomínio</DialogTitle>
+                  <DialogTitle>Adicionar Usuário do Condomínio</DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Crie usuários que terão acesso direto ao condomínio (moradores, administrativos, etc.)
+                  </p>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -184,10 +187,12 @@ export default function BuildingDetails({ buildingId, onBack }: BuildingDetailsP
                         <SelectValue placeholder="Selecione o tipo" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Porteiro">Porteiro</SelectItem>
-                        <SelectItem value="Porteiro Remoto">Porteiro Remoto</SelectItem>
                         <SelectItem value="Morador">Morador</SelectItem>
                         <SelectItem value="Administrativo">Administrativo</SelectItem>
+                        <SelectItem value="Síndico">Síndico</SelectItem>
+                        <SelectItem value="Zelador">Zelador</SelectItem>
+                        <SelectItem value="Funcionário">Funcionário</SelectItem>
+                        <SelectItem value="Visitante">Visitante</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

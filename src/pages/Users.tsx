@@ -18,7 +18,6 @@ const mockUsers = [
     status: "online" as const,
     building: "Residencial Vista Bela",
     integrator: "Integrador Centro",
-    accessGroup: "Porteiros",
     lastSeen: "Agora",
     createdAt: "2024-01-10"
   },
@@ -30,7 +29,6 @@ const mockUsers = [
     status: "online" as const,
     building: "Residencial Vista Bela",
     integrator: "Integrador Centro",
-    accessGroup: "Porteiros",
     lastSeen: "Agora",
     createdAt: "2024-01-15"
   },
@@ -42,32 +40,29 @@ const mockUsers = [
     status: "warning" as const,
     building: "Condomínio Solar",
     integrator: "Integrador Zona Norte",
-    accessGroup: "Porteiros",
     lastSeen: "5 min atrás",
     createdAt: "2024-02-01"
   },
   {
     id: "4",
-    name: "Ana Oliveira",
-    email: "ana.oliveira@email.com", 
-    type: "Administrativo" as const,
-    status: "offline" as const,
-    building: "Residencial Vista Bela",
+    name: "Ana Admin Centro",
+    email: "ana.admin@integradorcentro.com", 
+    type: "Admin Integrador" as const,
+    status: "online" as const,
+    building: "Integrador Centro",
     integrator: "Integrador Centro",
-    accessGroup: "Administrativo",
-    lastSeen: "2 horas atrás",
+    lastSeen: "2 min atrás",
     createdAt: "2024-01-20"
   },
   {
     id: "5",
-    name: "Pedro Costa",
-    email: "pedro.costa@email.com",
-    type: "Morador" as const,
-    status: "online" as const,
-    building: "Edifício Central Plaza",
-    integrator: "Integrador Centro",
-    accessGroup: "Moradores",
-    lastSeen: "Agora",
+    name: "Pedro Admin Norte",
+    email: "pedro.admin@integradornorte.com",
+    type: "Admin Integrador" as const,
+    status: "offline" as const,
+    building: "Integrador Zona Norte",
+    integrator: "Integrador Zona Norte",
+    lastSeen: "1 hora atrás",
     createdAt: "2024-02-10"
   }
 ];
@@ -77,6 +72,7 @@ export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterIntegrator, setFilterIntegrator] = useState<string>("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const filteredUsers = users.filter(user => {
@@ -84,16 +80,16 @@ export default function Users() {
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === "all" || user.type === filterType;
     const matchesStatus = filterStatus === "all" || user.status === filterStatus;
+    const matchesIntegrator = filterIntegrator === "all" || user.integrator === filterIntegrator;
     
-    return matchesSearch && matchesType && matchesStatus;
+    return matchesSearch && matchesType && matchesStatus && matchesIntegrator;
   });
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case "Porteiro": return "bg-blue-100 text-blue-800";
       case "Porteiro Remoto": return "bg-purple-100 text-purple-800";
-      case "Morador": return "bg-green-100 text-green-800";
-      case "Administrativo": return "bg-orange-100 text-orange-800";
+      case "Admin Integrador": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
@@ -102,9 +98,9 @@ export default function Users() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gestão de Usuários</h2>
+          <h2 className="text-2xl font-bold">Usuários Criados pelos Integradores</h2>
           <p className="text-muted-foreground">
-            Administre todos os usuários do sistema
+            Gerencie porteiros, porteiros remotos e admins criados pelos integradores
           </p>
         </div>
         
@@ -137,8 +133,7 @@ export default function Users() {
                   <SelectContent>
                     <SelectItem value="Porteiro">Porteiro</SelectItem>
                     <SelectItem value="Porteiro Remoto">Porteiro Remoto</SelectItem>
-                    <SelectItem value="Morador">Morador</SelectItem>
-                    <SelectItem value="Administrativo">Administrativo</SelectItem>
+                    <SelectItem value="Admin Integrador">Admin Integrador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -151,20 +146,6 @@ export default function Users() {
                   <SelectContent>
                     <SelectItem value="1">Integrador Centro</SelectItem>
                     <SelectItem value="2">Integrador Zona Norte</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="userAccessGroup">Grupo de Acesso</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o grupo de acesso" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Porteiros">Porteiros</SelectItem>
-                    <SelectItem value="Administrativo">Administrativo</SelectItem>
-                    <SelectItem value="Moradores">Moradores</SelectItem>
-                    <SelectItem value="Síndicos">Síndicos</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -188,10 +169,11 @@ export default function Users() {
       </div>
 
       <div className="flex items-center gap-4 flex-wrap">
+        
         <div className="relative flex-1 min-w-[300px]">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder="Buscar usuários..."
+            placeholder="Buscar por nome ou email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -206,8 +188,7 @@ export default function Users() {
             <SelectItem value="all">Todos os tipos</SelectItem>
             <SelectItem value="Porteiro">Porteiro</SelectItem>
             <SelectItem value="Porteiro Remoto">Porteiro Remoto</SelectItem>
-            <SelectItem value="Morador">Morador</SelectItem>
-            <SelectItem value="Administrativo">Administrativo</SelectItem>
+            <SelectItem value="Admin Integrador">Admin Integrador</SelectItem>
           </SelectContent>
         </Select>
 
@@ -220,6 +201,17 @@ export default function Users() {
             <SelectItem value="online">Online</SelectItem>
             <SelectItem value="offline">Offline</SelectItem>
             <SelectItem value="warning">Latência Alta</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filterIntegrator} onValueChange={setFilterIntegrator}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os integradores</SelectItem>
+            <SelectItem value="Integrador Centro">Integrador Centro</SelectItem>
+            <SelectItem value="Integrador Zona Norte">Integrador Zona Norte</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -242,18 +234,15 @@ export default function Users() {
                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                      <span>Integrador: {user.integrator}</span>
                      <span>•</span>
-                     <span>Acesso: {user.accessGroup}</span>
-                     <span>•</span>
                      <span>Visto: {user.lastSeen}</span>
                    </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2">
                   <Button variant="ghost" size="sm">
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="text-destructive">
+                  <Button variant="ghost" size="sm">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -262,6 +251,22 @@ export default function Users() {
           </Card>
         ))}
       </div>
+
+      {filteredUsers.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <div className="text-center">
+              <h3 className="text-lg font-medium mb-2">Nenhum usuário encontrado</h3>
+              <p className="text-muted-foreground">
+                {searchTerm || filterType !== "all" || filterStatus !== "all" || filterIntegrator !== "all"
+                  ? "Tente ajustar os filtros de busca."
+                  : "Crie o primeiro usuário para começar."
+                }
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

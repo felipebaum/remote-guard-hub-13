@@ -110,7 +110,15 @@ export default function Integrators() {
                 <Label htmlFor="adminUser">Usuário Administrador</Label>
                 <Input id="adminUser" placeholder="Nome do administrador" />
               </div>
-              <Button className="w-full">Criar Integrador</Button>
+              <div>
+                <Label htmlFor="adminEmail">Email do Administrador</Label>
+                <Input id="adminEmail" type="email" placeholder="admin@exemplo.com" />
+              </div>
+              <div>
+                <Label htmlFor="adminPassword">Senha Temporária</Label>
+                <Input id="adminPassword" type="password" placeholder="Senha temporária" />
+              </div>
+              <Button className="w-full">Criar Integrador e Admin</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -219,6 +227,16 @@ export default function Integrators() {
                   <div className="flex items-center justify-between text-sm mt-1">
                     <span className="text-muted-foreground">Criado em:</span>
                     <span className="text-sm">{new Date(integrator.createdAt).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <Users className="h-3 w-3 mr-1" />
+                      Novo Admin
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <Settings className="h-3 w-3 mr-1" />
+                      Configurar
+                    </Button>
                   </div>
                 </div>
               </div>
