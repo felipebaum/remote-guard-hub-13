@@ -1,609 +1,200 @@
-# Épicos e User Stories - Remote Guard Hub
+# Épicos e User Stories - Remote Guard Hub (v2)
 
-## 📋 Visão Geral do Projeto
+## Visão Geral Atual
 
-O **Remote Guard Hub** é um sistema de gestão de portaria remota para condomínios, com uma arquitetura hierárquica de usuários que permite a gestão centralizada através de integradores. O sistema oferece controle de acesso, monitoramento em tempo real e configurações SIP para comunicação.
-
-### 🏗️ Arquitetura do Sistema
-- **Super Admin**: Gerencia integradores e seus administradores
-- **Admin Integrador**: Gerencia condomínios e usuários operacionais
-- **Usuários Operacionais**: Porteiros, Porteiros Remotos, Admin Integrador
-- **Usuários Finais**: Moradores, Administrativos, Síndicos, Zeladores, Funcionários, Visitantes
-
----
-
-## 🎯 ÉPICOS DO PROJETO
-
-### 1. **ÉPICO: Gestão de Integradores**
-**Descrição**: Permite ao Super Admin criar e gerenciar integradores que serão responsáveis por grupos de condomínios.
-
-**Arquivos Relacionados**:
-- `src/pages/Integrators.tsx` - Interface principal de gestão
-- `src/pages/Index.tsx` - Roteamento e navegação
-- `src/components/ui/navigation.tsx` - Menu de navegação
-
-#### User Stories:
-
-**US-001: Criar Novo Integrador** *(Épico: Gestão de Integradores)*
-- **Como** Super Admin
-- **Eu quero** criar um novo integrador com seu administrador
-- **Para que** eu possa delegar a gestão de condomínios para terceiros
-- **Critérios de Aceitação**:
-  - Formulário com campos: Nome, Descrição, Admin User, Email, Senha
-  - Validação de email único
-  - Criação automática do usuário administrador
-  - Confirmação visual de sucesso
-
-**US-002: Visualizar Integradores** *(Épico: Gestão de Integradores)*
-- **Como** Super Admin
-- **Eu quero** visualizar todos os integradores cadastrados
-- **Para que** eu possa monitorar a estrutura organizacional
-- **Critérios de Aceitação**:
-  - Lista com cards informativos
-  - Informações: Nome, descrição, número de condomínios, usuários online/total
-  - Status do administrador
-  - Data de criação
-
-**US-003: Adicionar Condomínio ao Integrador** *(Épico: Gestão de Integradores)*
-- **Como** Super Admin
-- **Eu quero** adicionar condomínios a um integrador específico
-- **Para que** o integrador possa gerenciar esses condomínios
-- **Critérios de Aceitação**:
-  - Modal de criação com campos: Nome, Endereço, Conta SIP
-  - Validação de campos obrigatórios
-  - Associação automática ao integrador selecionado
-
-**US-004: Editar Condomínio** *(Épico: Gestão de Integradores)*
-- **Como** Super Admin
-- **Eu quero** editar informações de condomínios existentes
-- **Para que** eu possa manter os dados atualizados
-- **Critérios de Aceitação**:
-  - Modal de edição pré-preenchido
-  - Campos editáveis: Nome, Endereço, Conta SIP
-  - Botão para acessar detalhes do condomínio
+- Navegação lateral minimalista: `Dashboard` e `Integradores`.
+- Ações centralizadas por integrador no menu de engrenagem: `Novo Condomínio`, `Novo Usuário`, `Listar Usuários`, `Gerenciar Equipe`, `Configurar`, `Excluir Integrador`.
+- Lista de condomínios sempre visível dentro do card de cada integrador.
+- Criação de Integrador exige: `Nome`, `Descrição`, `CNPJ`, `Endereço completo`.
+- Condomínio: `Nome`, `Endereço`, credenciais SIP (`Host`, `Usuário`, `Senha`).
+- Tokens do Condomínio: modal com `gerar` (20 chars A–Z0–9), `revogar` e `histórico` com datas de criação/revogação.
+- Usuários: criação via engrenagem do integrador; para `Porteiro Remoto`, seleção múltipla de condomínios (em branco = acesso a todos).
+- Equipe do Integrador: modal para listar, adicionar e remover membros com `Nome`, `Email`, `Função`.
+- Menus superiores removidos; não existe página separada de "Usuários Condomínios" nem de "Admins Integradores".
 
 ---
 
-### 2. **ÉPICO: Gestão de Administradores de Integradores**
-**Descrição**: Permite ao Super Admin criar e gerenciar administradores específicos para cada integrador.
+## Épicos
 
-**Arquivos Relacionados**:
-- `src/pages/AdminUsers.tsx` - Interface de gestão de admins
-- `src/components/StatusIndicator.tsx` - Indicador de status
-
-#### User Stories:
-
-**US-005: Criar Administrador de Integrador** *(Épico: Gestão de Administradores de Integradores)*
-- **Como** Super Admin
-- **Eu quero** criar administradores para integradores específicos
-- **Para que** cada integrador tenha seus próprios gestores
-- **Critérios de Aceitação**:
-  - Formulário com: Nome, Email, Integrador, Senha
-  - Seleção de integrador obrigatória
-  - Validação de email único
-  - Definição de permissões específicas
-
-**US-006: Visualizar Administradores** *(Épico: Gestão de Administradores de Integradores)*
-- **Como** Super Admin
-- **Eu quero** visualizar todos os administradores de integradores
-- **Para que** eu possa monitorar a estrutura administrativa
-- **Critérios de Aceitação**:
-  - Lista com cards informativos
-  - Informações: Nome, Email, Integrador, Status, Permissões
-  - Filtro por integrador
-  - Busca por nome/email
-
-**US-007: Gerenciar Permissões de Admin** *(Épico: Gestão de Administradores de Integradores)*
-- **Como** Super Admin
-- **Eu quero** definir permissões específicas para cada administrador
-- **Para que** eu possa controlar o acesso às funcionalidades
-- **Critérios de Aceitação**:
-  - Lista de permissões disponíveis
-  - Seleção múltipla de permissões
-  - Visualização clara das permissões ativas
-  - Atualização em tempo real
+1) Gestão de Integradores e Condomínios (Front)
+2) Gestão de Usuários e Equipe do Integrador (Front)
+3) Gestão de Tokens do Condomínio (Front)
+4) Backend e Persistência (API/DB)
+5) Autenticação e Autorização (RBAC)
+6) Observabilidade, Qualidade e Deploy
 
 ---
 
-### 3. **ÉPICO: Gestão de Usuários Operacionais**
-**Descrição**: Permite aos administradores de integradores criar e gerenciar usuários operacionais (Porteiros, Porteiros Remotos, Admin Integrador).
+## User Stories (com critérios de aceite)
 
-**Arquivos Relacionados**:
-- `src/pages/Users.tsx` - Interface de gestão de usuários operacionais
-- `src/components/BuildingCard.tsx` - Card de condomínio
+### EP1 — Gestão de Integradores e Condomínios (Front)
 
-#### User Stories:
+**US-001 Criar Integrador**
+- Como Super Admin
+- Eu quero criar um integrador informando Nome, Descrição, CNPJ e Endereço completo
+- Para que eu possa organizar os condomínios sob uma entidade
+- Critérios de aceite:
+  - Formulário valida CNPJ (formato/14 dígitos) e campos obrigatórios
+  - Em sucesso, fecha modal e atualiza a lista na tela
+  - Feedback visual (toast) de sucesso/erro
 
-**US-008: Criar Usuário Operacional** *(Épico: Gestão de Usuários Operacionais)*
-- **Como** Admin de Integrador
-- **Eu quero** criar usuários operacionais para meus condomínios
-- **Para que** eles possam operar o sistema de portaria
-- **Critérios de Aceitação**:
-  - Formulário com: Nome, Email, Tipo, Integrador, Condomínio
-  - Tipos disponíveis: Porteiro, Porteiro Remoto, Admin Integrador
-  - Seleção de condomínio baseada no integrador
-  - Validação de email único
+**US-002 Visualizar Integradores**
+- Como Super Admin
+- Eu quero ver os integradores com seus dados resumidos
+- Para monitorar número de condomínios e usuários online
+- Critérios de aceite:
+  - Card por integrador com: nome, descrição, contagem de condomínios, usuários online/total
+  - Engrenagem com ações: Novo Condomínio, Novo Usuário, Listar Usuários, Gerenciar Equipe, Configurar, Excluir Integrador
 
-**US-009: Visualizar Usuários Operacionais** *(Épico: Gestão de Usuários Operacionais)*
-- **Como** Admin de Integrador
-- **Eu quero** visualizar todos os usuários operacionais dos meus condomínios
-- **Para que** eu possa monitorar a operação
-- **Critérios de Aceitação**:
-  - Lista com cards informativos
-  - Informações: Nome, Email, Tipo, Status, Condomínio, Integrador
-  - Filtros por: Tipo, Status, Integrador
-  - Busca por nome/email
+**US-003 Criar Condomínio**
+- Como Super Admin
+- Eu quero adicionar um condomínio ao integrador
+- Para que o integrador possa operá-lo
+- Critérios de aceite:
+  - Modal com `Nome`, `Endereço`, `Host SIP`, `Usuário SIP`, `Senha SIP`
+  - Validação de obrigatórios; senha mascarada
+  - Em sucesso, fecha modal e atualiza a lista de condomínios do integrador
 
-**US-010: Monitorar Status dos Usuários** *(Épico: Gestão de Usuários Operacionais)*
-- **Como** Admin de Integrador
-- **Eu quero** monitorar o status de conexão dos usuários
-- **Para que** eu possa identificar problemas operacionais
-- **Critérios de Aceitação**:
-  - Indicadores visuais de status (Online, Offline, Latência Alta)
-  - Informação de última vez visto
-  - Atualização em tempo real
-  - Alertas para usuários offline
+**US-004 Editar Condomínio**
+- Como Super Admin
+- Eu quero editar dados do condomínio
+- Para manter as informações atualizadas
+- Critérios de aceite:
+  - Modal pré-preenchido (Nome, Endereço, Host/Usuário/Senha)
+  - Botão para abrir detalhes do condomínio (rota `/?building=ID`)
+  - Em sucesso, atualiza card na UI
 
----
-
-### 4. **ÉPICO: Gestão de Condomínios**
-**Descrição**: Permite visualizar e gerenciar detalhes específicos de cada condomínio, incluindo usuários finais e configurações.
-
-**Arquivos Relacionados**:
-- `src/pages/BuildingDetails.tsx` - Interface detalhada do condomínio
-- `src/pages/Dashboard.tsx` - Visão geral com cards de condomínios
-
-#### User Stories:
-
-**US-011: Visualizar Detalhes do Condomínio** *(Épico: Gestão de Condomínios)*
-- **Como** Usuário autorizado
-- **Eu quero** acessar detalhes completos de um condomínio
-- **Para que** eu possa gerenciar suas configurações e usuários
-- **Critérios de Aceitação**:
-  - Navegação via URL com parâmetro building
-  - Informações: Nome, Endereço, Integrador, Status de conexão
-  - Métricas: Total de usuários, usuários online
-  - Botão de retorno ao dashboard
-
-**US-012: Gerenciar Usuários do Condomínio** *(Épico: Gestão de Condomínios)*
-- **Como** Usuário autorizado
-- **Eu quero** criar e gerenciar usuários finais do condomínio
-- **Para que** moradores e funcionários possam acessar o sistema
-- **Critérios de Aceitação**:
-  - Aba "Usuários" com lista de usuários
-  - Tipos: Morador, Administrativo, Síndico, Zelador, Funcionário, Visitante
-  - Formulário de criação com validação
-  - Visualização de status de cada usuário
-
-**US-013: Configurar SIP do Condomínio** *(Épico: Gestão de Condomínios)*
-- **Como** Usuário autorizado
-- **Eu quero** configurar as credenciais SIP do condomínio
-- **Para que** a comunicação funcione corretamente
-- **Critérios de Aceitação**:
-  - Aba "Configuração SIP" com campos: Conta, Senha, Servidor, Porta
-  - Opção de mostrar/ocultar senha
-  - Botões: Regenerar credenciais, Testar conexão, Copiar configurações
-  - Validação de formato SIP
-
-**US-014: Gerenciar Licenças do Condomínio** *(Épico: Gestão de Condomínios)*
-- **Como** Usuário autorizado
-- **Eu quero** visualizar e gerenciar licenças vinculadas ao condomínio
-- **Para que** eu possa controlar o acesso e limites
-- **Critérios de Aceitação**:
-  - Aba "Licenças" com lista de licenças ativas
-  - Informações: Nome, Status, Data de expiração
-  - Botão para vincular nova licença
-  - Alertas para licenças próximas do vencimento
+**US-005 Ver lista sempre de Condomínios no Integrador**
+- Como Super Admin
+- Eu quero ver sempre os condomínios de um integrador
+- Para ter visão rápida da carteira
+- Critérios de aceite:
+  - A seção "Condomínios" é sempre renderizada
+  - Ações rápidas por condomínio: Editar, Gerenciar Token, Abrir Detalhes
 
 ---
 
-### 5. **ÉPICO: Dashboard e Monitoramento**
-**Descrição**: Fornece uma visão geral do sistema com métricas e monitoramento em tempo real.
+### EP2 — Gestão de Usuários e Equipe do Integrador (Front)
 
-**Arquivos Relacionados**:
-- `src/pages/Dashboard.tsx` - Interface principal do dashboard
-- `src/components/BuildingCard.tsx` - Componente de card de condomínio
-- `src/components/StatusIndicator.tsx` - Indicador de status
+**US-006 Criar Usuário (via Engrenagem)**
+- Como Super Admin
+- Eu quero criar um usuário para o integrador via ação "Novo Usuário"
+- Para habilitar operação (Admin, Porteiro, Porteiro Remoto, Atendimento)
+- Critérios de aceite:
+  - Formulário com `Nome`, `Email`, `Tipo de Perfil`
+  - Se `Porteiro Remoto`, exibir seleção múltipla de Condomínios (checkboxes). Nenhum selecionado = acesso a todos
+  - Feedback de sucesso/erro
 
-#### User Stories:
+**US-007 Listar Usuários do Integrador (inline)**
+- Como Super Admin
+- Eu quero listar os usuários do integrador em uma visão inline
+- Para revisar rapidamente quem opera
+- Critérios de aceite:
+  - Ação "Listar Usuários" abre a lista embaixo do integrador com nome, email, tipo e status
+  - Botão "Voltar" retorna para a visualização padrão
 
-**US-015: Visualizar Dashboard Principal** *(Épico: Dashboard e Monitoramento)*
-- **Como** Usuário autorizado
-- **Eu quero** acessar um dashboard com visão geral do sistema
-- **Para que** eu possa monitorar rapidamente o status geral
-- **Critérios de Aceitação**:
-  - Cards com métricas: Total de Integradores, Condomínios, Usuários Total, Usuários Online
-  - Alternância entre visualização por condomínios e por integradores
-  - Lista de condomínios recentes com status
-  - Navegação rápida para detalhes
-
-**US-016: Monitorar Status de Conexão** *(Épico: Dashboard e Monitoramento)*
-- **Como** Usuário autorizado
-- **Eu quero** monitorar o status de conexão dos condomínios
-- **Para que** eu possa identificar problemas de conectividade
-- **Critérios de Aceitação**:
-  - Indicadores visuais de status (Online, Offline, Latência Alta)
-  - Tempo de resposta em milissegundos
-  - Atualização automática do status
-  - Cores diferenciadas por status
-
-**US-017: Navegar por Integradores** *(Épico: Dashboard e Monitoramento)*
-- **Como** Usuário autorizado
-- **Eu quero** alternar entre visualização por condomínios e por integradores
-- **Para que** eu possa ter diferentes perspectivas organizacionais
-- **Critérios de Aceitação**:
-  - Seletor de tipo de visualização
-  - Agrupamento de condomínios por integrador
-  - Informações do integrador: Nome, número de condomínios
-  - Navegação hierárquica
+**US-008 Gerenciar Equipe do Integrador**
+- Como Super Admin
+- Eu quero gerenciar a equipe administrativa do integrador
+- Para controlar quem administra os condomínios desse integrador
+- Critérios de aceite:
+  - Ação "Gerenciar Equipe" abre modal com listagem de membros (nome, email, função)
+  - Permite adicionar novo membro (nome, email, função) e remover membro existente
+  - Feedback de sucesso/erro
 
 ---
 
-### 6. **ÉPICO: Gestão de Licenças**
-**Descrição**: Permite criar e gerenciar licenças do sistema com controle de acesso e limites.
+### EP3 — Gestão de Tokens do Condomínio (Front)
 
-**Arquivos Relacionados**:
-- `src/pages/Licenses.tsx` - Interface de gestão de licenças
-- `src/components/ui/use-toast.ts` - Sistema de notificações
-
-#### User Stories:
-
-**US-018: Criar Nova Licença** *(Épico: Gestão de Licenças)*
-- **Como** Super Admin
-- **Eu quero** criar novas licenças para condomínios
-- **Para que** eu possa controlar o acesso ao sistema
-- **Critérios de Aceitação**:
-  - Formulário com: Nome, Tipo, Máximo de usuários, Data de expiração
-  - Geração automática de hash único
-  - Tipos: Condomínio, Teste
-  - Validação de data de expiração
-
-**US-019: Visualizar Licenças** *(Épico: Gestão de Licenças)*
-- **Como** Usuário autorizado
-- **Eu quero** visualizar todas as licenças do sistema
-- **Para que** eu possa monitorar o uso e status
-- **Critérios de Aceitação**:
-  - Lista com cards informativos
-  - Informações: Nome, Target, Status, Hash, Usuários atuais/máximo
-  - Status: Ativa, Expirada, Suspensa
-  - Filtros por status e tipo
-
-**US-020: Gerenciar Hash de Licença** *(Épico: Gestão de Licenças)*
-- **Como** Usuário autorizado
-- **Eu quero** visualizar e copiar o hash da licença
-- **Para que** eu possa configurar o sistema
-- **Critérios de Aceitação**:
-  - Campo de hash mascarado por padrão
-  - Botão para mostrar/ocultar hash
-  - Botão para copiar hash para clipboard
-  - Notificação de sucesso ao copiar
+**US-009 Gerenciar Token do Condomínio**
+- Como Super Admin
+- Eu quero gerar e revogar tokens do condomínio
+- Para controlar integrações/uso de API/serviços
+- Critérios de aceite:
+  - Ícone de chave abre modal com: `Condomínio`, `Token atual` (somente leitura), `Histórico`
+  - Gerar: cria token de 20 caracteres A–Z0–9; passa a ser o atual; registra `created_at`
+  - Revogar: limpa token atual e seta `revoked_at` no histórico
+  - Histórico mostra token, `criado em`, `revogado em` (se houver), e destaca o atual
 
 ---
 
-### 7. **ÉPICO: Navegação e Interface**
-**Descrição**: Fornece uma interface intuitiva e navegação eficiente entre as funcionalidades.
+### EP4 — Backend e Persistência (API/DB)
 
-**Arquivos Relacionados**:
-- `src/components/ui/navigation.tsx` - Menu de navegação lateral
-- `src/components/Header.tsx` - Cabeçalho da aplicação
-- `src/App.tsx` - Configuração de rotas
+**US-010 Modelagem de Dados**
+- Como Dev
+- Eu quero ter um esquema de tabelas para Integradores, Condomínios, Usuários, Equipes e Tokens
+- Para persistir dados com integridade
+- Critérios de aceite:
+  - Tabelas: `integrators`, `integrator_admins` (ou `users`), `buildings`, `building_sip_credentials`, `building_tokens`, `integrator_team_members`
+  - Restrição: apenas 1 token ativo por `building` (índice parcial único)
+  - `cnpj` único em `integrators`; FKs com `ON DELETE CASCADE`
 
-#### User Stories:
+**US-011 APIs REST**
+- Como Frontend
+- Eu quero endpoints CRUD para integradores e condomínios, endpoints para tokens e equipe
+- Para integrar a UI ao backend
+- Critérios de aceite:
+  - Integradores: POST/GET/GET:id/PATCH:id/DELETE:id (validações de CNPJ e obrigatórios)
+  - Condomínios: idem, com credenciais SIP (armazenar senha criptografada)
+  - Tokens: gerar, listar histórico, revogar (20 chars A–Z0–9; 1 ativo)
+  - Equipe: listar, adicionar, remover membro (`integrator_id`, `name`, `email`, `role`)
 
-**US-021: Navegar pelo Sistema** *(Épico: Navegação e Interface)*
-- **Como** Usuário autorizado
-- **Eu quero** navegar facilmente entre as diferentes seções
-- **Para que** eu possa acessar todas as funcionalidades
-- **Critérios de Aceitação**:
-  - Menu lateral com ícones e labels
-  - Indicador visual da seção ativa
-  - Navegação sem recarregamento da página
-  - Responsividade para dispositivos móveis
-
-**US-022: Acessar Condomínio Específico** *(Épico: Navegação e Interface)*
-- **Como** Usuário autorizado
-- **Eu quero** acessar diretamente um condomínio específico
-- **Para que** eu possa trabalhar com URLs compartilháveis
-- **Critérios de Aceitação**:
-  - URL com parâmetro `?building=ID`
-  - Carregamento automático dos detalhes
-  - Botão de retorno ao dashboard
-  - Manutenção do estado de navegação
-
----
-
-### 8. **ÉPICO: Aquisição de PABX em Nuvem**
-**Descrição**: Permite aos integradores e condomínios adquirir e configurar serviços de PABX em nuvem para comunicação telefônica avançada.
-
-**Arquivos Relacionados**:
-- `src/pages/PabxCloud.tsx` - Interface de gestão de PABX em nuvem (a criar)
-- `src/components/PabxCard.tsx` - Card de serviço PABX (a criar)
-- `src/components/ui/navigation.tsx` - Adicionar item de menu
-
-#### User Stories:
-
-**US-023: Visualizar Planos de PABX em Nuvem** *(Épico: Aquisição de PABX em Nuvem)*
-- **Como** Admin de Integrador ou Super Admin
-- **Eu quero** visualizar os planos disponíveis de PABX em nuvem
-- **Para que** eu possa escolher o melhor plano para meus condomínios
-- **Critérios de Aceitação**:
-  - Lista de planos com características: Número de ramais, minutos incluídos, recursos
-  - Preços mensais e anuais
-  - Comparativo entre planos
-  - Informações sobre recursos: Gravação, IVR, Filas, Relatórios
-
-**US-024: Contratar Plano de PABX** *(Épico: Aquisição de PABX em Nuvem)*
-- **Como** Admin de Integrador
-- **Eu quero** contratar um plano de PABX em nuvem para meus condomínios
-- **Para que** eu possa oferecer comunicação telefônica avançada
-- **Critérios de Aceitação**:
-  - Formulário de contratação com dados do integrador
-  - Seleção de plano e período de pagamento
-  - Informações de cobrança e faturamento
-  - Confirmação de contrato e termos de uso
-  - Processo de ativação automática
-
-**US-025: Configurar PABX para Condomínio** *(Épico: Aquisição de PABX em Nuvem)*
-- **Como** Admin de Integrador
-- **Eu quero** configurar o PABX em nuvem para um condomínio específico
-- **Para que** o condomínio tenha sua própria central telefônica
-- **Critérios de Aceitação**:
-  - Configuração de ramais para cada apartamento/unidade
-  - Definição de horários de funcionamento
-  - Configuração de IVR (Menu de voz)
-  - Atribuição de números de telefone
-  - Teste de configuração
-
-**US-026: Gerenciar Ramais do PABX** *(Épico: Aquisição de PABX em Nuvem)*
-- **Como** Admin de Integrador
-- **Eu quero** gerenciar os ramais do PABX de cada condomínio
-- **Para que** eu possa controlar o acesso telefônico
-- **Critérios de Aceitação**:
-  - Lista de ramais ativos por condomínio
-  - Criação/edição/remoção de ramais
-  - Configuração de permissões por ramal
-  - Histórico de chamadas por ramal
-  - Status de uso em tempo real
-
-**US-027: Monitorar Uso do PABX** *(Épico: Aquisição de PABX em Nuvem)*
-- **Como** Admin de Integrador
-- **Eu quero** monitorar o uso do PABX em nuvem
-- **Para que** eu possa controlar custos e otimizar recursos
-- **Critérios de Aceitação**:
-  - Dashboard com métricas de uso: Minutos consumidos, Chamadas realizadas
-  - Relatórios de uso por condomínio e período
-  - Alertas de limite de uso
-  - Histórico de faturamento
-  - Gráficos de tendência de uso
-
-**US-028: Configurar Recursos Avançados** *(Épico: Aquisição de PABX em Nuvem)*
-- **Como** Admin de Integrador
-- **Eu quero** configurar recursos avançados do PABX
-- **Para que** eu possa oferecer funcionalidades diferenciadas
-- **Critérios de Aceitação**:
-  - Configuração de filas de atendimento
-  - Criação de grupos de ramais
-  - Configuração de transferência de chamadas
-  - Gravação de chamadas (se permitido)
-  - Integração com sistema de portaria
-
-**US-029: Gerenciar Faturamento do PABX** *(Épico: Aquisição de PABX em Nuvem)*
-- **Como** Super Admin
-- **Eu quero** gerenciar o faturamento dos serviços de PABX
-- **Para que** eu possa controlar a receita e cobrança
-- **Critérios de Aceitação**:
-  - Visualização de contratos ativos por integrador
-  - Relatórios de faturamento mensal/anual
-  - Controle de inadimplência
-  - Renovação automática de contratos
-  - Suspensão por falta de pagamento
-
-**US-030: Suporte Técnico PABX** *(Épico: Aquisição de PABX em Nuvem)*
-- **Como** Usuário do sistema
-- **Eu quero** acessar suporte técnico para problemas com PABX
-- **Para que** eu possa resolver questões rapidamente
-- **Critérios de Aceitação**:
-  - Portal de suporte integrado
-  - Abertura de chamados técnicos
-  - Status de resolução em tempo real
-  - Base de conhecimento e FAQs
-  - Chat online com suporte técnico
+**US-012 Soft Delete Global**
+- Como Produto/Operação
+- Eu quero adotar soft delete nas entidades principais
+- Para permitir recuperação e auditoria
+- Critérios de aceite:
+  - Campos: `deleted_at TIMESTAMPTZ NULL`, `deleted_by UUID NULL` em `integrators`, `buildings`, `integrator_admins`/`users`, `integrator_team_members`
+  - Todas as consultas padrão (GET list/show) devem excluir registros soft-deletados; `?include_deleted=true` expõe opcionalmente
+  - Constraints únicas devem considerar apenas registros ativos (índices parciais), ex.: `UNIQUE (cnpj) WHERE deleted_at IS NULL`
+  - Endpoints: `DELETE` realiza soft delete; `POST /:id/restore` restaura (zera `deleted_at`/`deleted_by`)
+  - Cascata lógica: impedir hard delete; ao soft-deletar um integrador, seus condomínios e equipe ficam invisíveis por padrão
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+### EP5 — Autenticação e Autorização (RBAC)
 
-### Frontend
-- **React 18** - Framework principal
-- **TypeScript** - Tipagem estática
-- **Vite** - Build tool e dev server
-- **React Router DOM** - Roteamento
-- **TanStack Query** - Gerenciamento de estado servidor
-
-### UI/UX
-- **shadcn/ui** - Componentes de interface
-- **Radix UI** - Componentes primitivos acessíveis
-- **Tailwind CSS** - Framework de estilos
-- **Lucide React** - Ícones
-- **Sonner** - Sistema de notificações
-
-### Desenvolvimento
-- **ESLint** - Linting
-- **PostCSS** - Processamento de CSS
-- **Autoprefixer** - Compatibilidade de CSS
+**US-013 Login e Escopo por Integrador**
+- Como Admin Integrador / Super Admin
+- Eu quero autenticar e ter escopos
+- Para garantir que cada admin veja apenas seus dados
+- Critérios de aceite:
+  - JWT com claims de `role` e `integrator_id`
+  - Rotas protegidas no backend e guardas no frontend
 
 ---
 
-## 📁 Estrutura de Arquivos Principais
+### EP6 — Observabilidade, Qualidade e Deploy
 
-```
-src/
-├── pages/                    # Páginas principais
-│   ├── Index.tsx            # Roteamento principal
-│   ├── Dashboard.tsx        # Dashboard com métricas
-│   ├── Integrators.tsx      # Gestão de integradores
-│   ├── AdminUsers.tsx       # Gestão de admins
-│   ├── Users.tsx           # Gestão de usuários operacionais
-│   ├── BuildingDetails.tsx  # Detalhes do condomínio
-│   └── Licenses.tsx        # Gestão de licenças
-├── components/              # Componentes reutilizáveis
-│   ├── Header.tsx          # Cabeçalho
-│   ├── BuildingCard.tsx    # Card de condomínio
-│   ├── StatusIndicator.tsx # Indicador de status
-│   └── ui/                 # Componentes de interface
-├── hooks/                   # Hooks customizados
-├── lib/                     # Utilitários
-└── main.tsx                # Ponto de entrada
-```
+**US-014 Logs, Segurança e Rate Limit**
+- Como DevOps
+- Eu quero ter logs estruturados e proteção
+- Para operar com segurança
+- Critérios de aceite:
+  - Logs sem segredos (masking), rate limit nos endpoints de token
+
+**US-015 Testes e Deploy**
+- Como Equipe
+- Eu quero ter build estável
+- Para garantir qualidade contínua
+- Critérios de aceite:
+  - Testes unitários principais (tokens, CNPJ, SIP, equipe)
+  - Build de produção e deploy em Vercel
 
 ---
 
-## 📊 Resumo da Documentação
+## Backlog (Sugestões Futuras)
 
-### 🎯 **8 Épicos Principais**:
-1. **Gestão de Integradores** - Criação e gerenciamento de integradores
-2. **Gestão de Administradores** - Criação de admins para cada integrador  
-3. **Gestão de Usuários Operacionais** - Porteiros, Porteiros Remotos, Admin Integrador
-4. **Gestão de Condomínios** - Detalhes, usuários finais, configurações SIP
-5. **Dashboard e Monitoramento** - Visão geral e métricas em tempo real
-6. **Gestão de Licenças** - Controle de acesso e limites
-7. **Navegação e Interface** - UX/UI e navegação
-8. **Aquisição de PABX em Nuvem** - Contratação e gestão de serviços telefônicos
-
-### 📝 **30 User Stories Detalhadas** com:
-- Descrição clara do usuário, necessidade e benefício
-- Critérios de aceitação específicos
-- Caminhos dos arquivos Git relacionados
-- Estrutura hierárquica de usuários bem definida
-
-### 🛠️ **Informações Técnicas**:
-- Stack tecnológico completo (React, TypeScript, Vite, shadcn/ui)
-- Estrutura de arquivos organizada
-- Próximos passos sugeridos para evolução
-
-### 📁 **Caminhos dos Arquivos**:
-Todos os arquivos relevantes estão mapeados com seus caminhos completos para facilitar o desenvolvimento, incluindo:
-- `src/pages/` - Todas as páginas principais
-- `src/components/` - Componentes reutilizáveis
-- `src/components/ui/` - Componentes de interface
+- Detalhes avançados do condomínio (páginas de usuários finais, relatórios)
+- Importação em massa de usuários/condomínios
+- Auditoria (trilhas de auditoria por ação)
+- Webhooks para eventos de token e SIP
 
 ---
 
-## 🎯 Próximos Passos Sugeridos
+## Rastreabilidade (arquivos principais)
 
-1. **Implementar Autenticação**
-   - Sistema de login com roles
-   - Controle de acesso baseado em permissões
-   - Sessões seguras
-
-2. **Integração com Backend**
-   - APIs REST para CRUD
-   - WebSockets para atualizações em tempo real
-   - Validação de dados
-
-3. **Funcionalidades Avançadas**
-   - Relatórios e analytics
-   - Notificações push
-   - Logs de auditoria
-   - Backup e restore
-
-4. **Melhorias de UX**
-   - Loading states
-   - Error boundaries
-   - Responsividade completa
-   - Acessibilidade (WCAG)
-
-5. **Testes**
-   - Testes unitários (Jest/Vitest)
-   - Testes de integração
-   - Testes E2E (Playwright)
-
----
-
-*Documentação gerada em: $(date)*
-*Versão do projeto: 0.0.0*
-
----
-
-## 📌 Backlog de User Stories (como Issues) com estimativas
-
-> Formato pronto para criação de issues. Cada história inclui critérios de aceite (checklist) e estimativa de esforço.
-
-### US-100 — Configurar banco e migrações iniciais (6–8h)
-- [ ] Provisionar PostgreSQL (dev/homolog)
-- [ ] Criar base de migrações e script único de execução
-- [ ] Habilitar extensões necessárias (`uuid-ossp`, `citext`)
-- [ ] Pipeline local para rodar migrações automaticamente
-
-### US-101 — Esquema de dados Integradores/Condomínios/SIP/Tokens (6–8h)
-- [ ] Criar tabelas conforme proposta (integrators, integrator_admins, buildings, building_sip_credentials, building_tokens)
-- [ ] Índice único: 1 token ativo por condomínio
-- [ ] Restrições: `cnpj` único; FKs com `ON DELETE CASCADE`
-- [ ] Triggers `updated_at`
-
-### US-102 — API Integradores (CRUD) com validação (8–12h)
-- [ ] Endpoints: POST/GET/GET:id/PATCH:id/DELETE:id
-- [ ] Validação CNPJ (14 dígitos); endereço obrigatório
-- [ ] Paginação e filtros básicos (nome)
-- [ ] Respostas 422 para dados inválidos
-
-### US-103 — API Condomínios (CRUD) vinculados ao Integrador (8–12h)
-- [ ] Endpoints: POST/GET/GET:id/PATCH:id/DELETE:id
-- [ ] Associação obrigatória ao `integrator_id`
-- [ ] Regras de ownership por integrador
-- [ ] Paginação e filtros (nome, integrador)
-
-### US-104 — API Credenciais SIP (criar/atualizar/ler segura) (8–12h)
-- [ ] Guardar `sip_host`, `sip_username`, `sip_password` (criptografado)
-- [ ] GET deve mascarar senha
-- [ ] Rotas protegidas com RBAC
-- [ ] Logs com masking
-
-### US-105 — API Tokens (gerar 20 A–Z0–9, revogar, histórico) (8–12h)
-- [ ] Gerar token 20 chars maiúsculos e dígitos
-- [ ] Garantir apenas 1 ativo por condomínio
-- [ ] Listar histórico com `created_at` e `revoked_at`
-- [ ] Revogação registra `revoked_at`
-
-### US-106 — Autenticação/Autorização Admin Integrador (10–14h)
-- [ ] Login + emissão de JWT
-- [ ] Escopo por `integrator_id`
-- [ ] Middleware RBAC nas rotas
-- [ ] Refresh token básico
-
-### US-107 — Frontend Integradores: criar com CNPJ/endereço (6–8h)
-- [ ] Conectar formulário de novo integrador à API
-- [ ] Estados de loading/erro + toasts
-- [ ] Atualizar listagem após criação
-
-### US-108 — Frontend Condomínios: criar/editar host/user/senha (8–12h)
-- [ ] Conectar diálogos de adicionar/editar às APIs
-- [ ] Mascarar senha no editar
-- [ ] Validações de campos e feedback visual
-
-### US-109 — Frontend Tokens: gerar/revogar + histórico com datas (6–8h)
-- [ ] Conectar modal às APIs (gerar, revogar, listar histórico)
-- [ ] Exibir datas de criação/revogação e destacar atual
-- [ ] Botão copiar para token atual e históricos
-
-### US-110 — Testes unitários e integração (10–14h)
-- [ ] Testes dos serviços: CNPJ, tokens, SIP
-- [ ] Testes de API principais (CRUD, regras)
-- [ ] Testes de UI críticos (modal tokens, formulários)
-
-### US-111 — Observabilidade e segurança básica (6–8h)
-- [ ] Logs estruturados e correlação
-- [ ] Masking de segredos (SIP/token)
-- [ ] Rate limit nos endpoints de token
-
-### US-112 — Deploy (homolog/prod) e pipeline (6–10h)
-- [ ] Scripts de build e migração
-- [ ] Variáveis de ambiente seguras
-- [ ] Deploy reproduzível e rollback simples
-
-### US-113 — UAT e hardening final (6–10h)
-- [ ] Rodada de validação com usuários-chave
-- [ ] Ajustes de UX e regras
-- [ ] Checklist final de aceite
-
-Total estimado: 96–144 horas (12–18 dias úteis).
+- `src/pages/Integrators.tsx` — cards, engrenagem, modais (usuários, equipe, tokens)
+- `src/pages/Dashboard.tsx` — visão geral
+- `src/components/ui/navigation.tsx` — navegação lateral
+- `src/pages/Index.tsx` — roteamento simples e container 

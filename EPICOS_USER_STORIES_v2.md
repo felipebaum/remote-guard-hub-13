@@ -3,11 +3,13 @@
 ## Visão Geral Atual
 
 - Navegação lateral minimalista: `Dashboard` e `Integradores`.
-- Ações centralizadas por integrador no menu de engrenagem: `Novo Condomínio`, `Novo Usuário`, `Listar Usuários`, `Configurar`, `Excluir Integrador`.
+- Ações centralizadas por integrador no menu de engrenagem: `Novo Condomínio`, `Novo Usuário`, `Listar Usuários`, `Gerenciar Equipe`, `Configurar`, `Excluir Integrador`.
 - Lista de condomínios sempre visível dentro do card de cada integrador.
 - Criação de Integrador exige: `Nome`, `Descrição`, `CNPJ`, `Endereço completo`.
 - Condomínio: `Nome`, `Endereço`, credenciais SIP (`Host`, `Usuário`, `Senha`).
 - Tokens do Condomínio: modal com `gerar` (20 chars A–Z0–9), `revogar` e `histórico` com datas de criação/revogação.
+- Usuários: criação via engrenagem do integrador; para `Porteiro Remoto`, seleção múltipla de condomínios (em branco = acesso a todos).
+- Equipe do Integrador: modal para listar, adicionar e remover membros com `Nome`, `Email`, `Função`.
 - Menus superiores removidos; não existe página separada de "Usuários Condomínios" nem de "Admins Integradores".
 
 ---
@@ -15,7 +17,7 @@
 ## Épicos
 
 1) Gestão de Integradores e Condomínios (Front)
-2) Gestão de Usuários Operacionais do Integrador (Front)
+2) Gestão de Usuários e Equipe do Integrador (Front)
 3) Gestão de Tokens do Condomínio (Front)
 4) Backend e Persistência (API/DB)
 5) Autenticação e Autorização (RBAC)
@@ -42,7 +44,7 @@
 - Para monitorar número de condomínios e usuários online
 - Critérios de aceite:
   - Card por integrador com: nome, descrição, contagem de condomínios, usuários online/total
-  - Engrenagem com ações: Novo Condomínio, Novo Usuário, Listar Usuários, Configurar, Excluir Integrador
+  - Engrenagem com ações: Novo Condomínio, Novo Usuário, Listar Usuários, Gerenciar Equipe, Configurar, Excluir Integrador
 
 **US-003 Criar Condomínio**
 - Como Super Admin
@@ -72,7 +74,7 @@
 
 ---
 
-### EP2 — Gestão de Usuários Operacionais do Integrador (Front)
+### EP2 — Gestão de Usuários e Equipe do Integrador (Front)
 
 **US-006 Criar Usuário (via Engrenagem)**
 - Como Super Admin
@@ -80,7 +82,7 @@
 - Para habilitar operação (Admin, Porteiro, Porteiro Remoto, Atendimento)
 - Critérios de aceite:
   - Formulário com `Nome`, `Email`, `Tipo de Perfil`
-  - Se `Porteiro Remoto`, exibir seletor de Condomínio (opcional). Em branco = acesso a todos
+  - Se `Porteiro Remoto`, exibir seleção múltipla de Condomínios (checkboxes). Nenhum selecionado = acesso a todos
   - Feedback de sucesso/erro
 
 **US-007 Listar Usuários do Integrador (inline)**
@@ -91,11 +93,20 @@
   - Ação "Listar Usuários" abre a lista embaixo do integrador com nome, email, tipo e status
   - Botão "Voltar" retorna para a visualização padrão
 
+**US-008 Gerenciar Equipe do Integrador**
+- Como Super Admin
+- Eu quero gerenciar a equipe administrativa do integrador
+- Para controlar quem administra os condomínios desse integrador
+- Critérios de aceite:
+  - Ação "Gerenciar Equipe" abre modal com listagem de membros (nome, email, função)
+  - Permite adicionar novo membro (nome, email, função) e remover membro existente
+  - Feedback de sucesso/erro
+
 ---
 
 ### EP3 — Gestão de Tokens do Condomínio (Front)
 
-**US-008 Gerenciar Token do Condomínio**
+**US-009 Gerenciar Token do Condomínio**
 - Como Super Admin
 - Eu quero gerar e revogar tokens do condomínio
 - Para controlar integrações/uso de API/serviços
@@ -109,40 +120,41 @@
 
 ### EP4 — Backend e Persistência (API/DB)
 
-**US-009 Modelagem de Dados**
+**US-010 Modelagem de Dados**
 - Como Dev
-- Eu quero ter um esquema de tabelas para Integradores, Condomínios, Usuários e Tokens
+- Eu quero ter um esquema de tabelas para Integradores, Condomínios, Usuários, Equipes e Tokens
 - Para persistir dados com integridade
 - Critérios de aceite:
-  - Tabelas: `integrators`, `integrator_admins` (ou usuários), `buildings`, `building_sip_credentials`, `building_tokens`
+  - Tabelas: `integrators`, `integrator_admins` (ou `users`), `buildings`, `building_sip_credentials`, `building_tokens`, `integrator_team_members`
   - Restrição: apenas 1 token ativo por `building` (índice parcial único)
   - `cnpj` único em `integrators`; FKs com `ON DELETE CASCADE`
 
-**US-010 APIs REST**
+**US-011 APIs REST**
 - Como Frontend
-- Eu quero endpoints CRUD para integradores e condomínios, e endpoints para tokens
+- Eu quero endpoints CRUD para integradores e condomínios, endpoints para tokens e equipe
 - Para integrar a UI ao backend
 - Critérios de aceite:
   - Integradores: POST/GET/GET:id/PATCH:id/DELETE:id (validações de CNPJ e obrigatórios)
   - Condomínios: idem, com credenciais SIP (armazenar senha criptografada)
   - Tokens: gerar, listar histórico, revogar (20 chars A–Z0–9; 1 ativo)
+  - Equipe: listar, adicionar, remover membro (`integrator_id`, `name`, `email`, `role`)
 
-**US-011 Soft Delete Global**
+**US-012 Soft Delete Global**
 - Como Produto/Operação
 - Eu quero adotar soft delete nas entidades principais
 - Para permitir recuperação e auditoria
 - Critérios de aceite:
-  - Campos: `deleted_at TIMESTAMPTZ NULL`, `deleted_by UUID NULL` em `integrators`, `buildings`, `integrator_admins` (ou `users`)
+  - Campos: `deleted_at TIMESTAMPTZ NULL`, `deleted_by UUID NULL` em `integrators`, `buildings`, `integrator_admins`/`users`, `integrator_team_members`
   - Todas as consultas padrão (GET list/show) devem excluir registros soft-deletados; `?include_deleted=true` expõe opcionalmente
   - Constraints únicas devem considerar apenas registros ativos (índices parciais), ex.: `UNIQUE (cnpj) WHERE deleted_at IS NULL`
   - Endpoints: `DELETE` realiza soft delete; `POST /:id/restore` restaura (zera `deleted_at`/`deleted_by`)
-  - Cascata lógica: impedir hard delete; ao soft-deletar um integrador, seus condomínios ficam invisíveis por padrão (não hard delete)
+  - Cascata lógica: impedir hard delete; ao soft-deletar um integrador, seus condomínios e equipe ficam invisíveis por padrão
 
 ---
 
 ### EP5 — Autenticação e Autorização (RBAC)
 
-**US-012 Login e Escopo por Integrador**
+**US-013 Login e Escopo por Integrador**
 - Como Admin Integrador / Super Admin
 - Eu quero autenticar e ter escopos
 - Para garantir que cada admin veja apenas seus dados
@@ -154,19 +166,19 @@
 
 ### EP6 — Observabilidade, Qualidade e Deploy
 
-**US-013 Logs, Segurança e Rate Limit**
+**US-014 Logs, Segurança e Rate Limit**
 - Como DevOps
 - Eu quero ter logs estruturados e proteção
 - Para operar com segurança
 - Critérios de aceite:
   - Logs sem segredos (masking), rate limit nos endpoints de token
 
-**US-014 Testes e Deploy**
+**US-015 Testes e Deploy**
 - Como Equipe
 - Eu quero ter build estável
 - Para garantir qualidade contínua
 - Critérios de aceite:
-  - Testes unitários principais (tokens, CNPJ, SIP)
+  - Testes unitários principais (tokens, CNPJ, SIP, equipe)
   - Build de produção e deploy em Vercel
 
 ---
@@ -182,7 +194,7 @@
 
 ## Rastreabilidade (arquivos principais)
 
-- `src/pages/Integrators.tsx` — cards, engrenagem, modais e tokens
+- `src/pages/Integrators.tsx` — cards, engrenagem, modais (usuários, equipe, tokens)
 - `src/pages/Dashboard.tsx` — visão geral
 - `src/components/ui/navigation.tsx` — navegação lateral
 - `src/pages/Index.tsx` — roteamento simples e container
