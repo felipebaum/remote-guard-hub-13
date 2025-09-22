@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Building2, Users, Settings, Trash2, Edit, Phone, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,11 +66,16 @@ export default function Integrators() {
   const [selectedIntegratorId, setSelectedIntegratorId] = useState<string | null>(null);
   const [isEditBuildingDialogOpen, setIsEditBuildingDialogOpen] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState<any>(null);
-  const [isCreateAdminDialogOpen, setIsCreateAdminDialogOpen] = useState(false);
+  const [isCreateUserDialogOpen, setIsCreateUserDialogOpen] = useState(false);
+  const [newUserType, setNewUserType] = useState<string>("");
+  const [newUserBuildingId, setNewUserBuildingId] = useState<string>("");
   const [isTokenDialogOpen, setIsTokenDialogOpen] = useState(false);
   const [tokenBuilding, setTokenBuilding] = useState<any>(null);
   const [buildingTokens, setBuildingTokens] = useState<Record<string, string | null>>({});
   const [buildingTokenHistory, setBuildingTokenHistory] = useState<Record<string, { token: string; createdAt: string; revokedAt?: string }[]>>({});
+  const [showUsersList, setShowUsersList] = useState(false);
+  const [showBuildingsList, setShowBuildingsList] = useState(false);
+  const [selectedIntegratorForList, setSelectedIntegratorForList] = useState<string | null>(null);
 
   const generateUppercaseToken = (length: number = 20) => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -90,6 +95,8 @@ export default function Integrators() {
     setSelectedBuilding(building);
     setIsEditBuildingDialogOpen(true);
   };
+
+  // (Removido) abertura por hash – ações ficam na engrenagem do integrador
 
   return (
     <div className="space-y-6">
@@ -160,8 +167,11 @@ export default function Integrators() {
                       <DropdownMenuItem onClick={() => { setSelectedIntegratorId(integrator.id); setIsCreateBuildingDialogOpen(true); }}>
                         <Plus className="h-4 w-4 mr-2" /> Novo Condomínio
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => { setSelectedIntegratorId(integrator.id); setIsCreateAdminDialogOpen(true); }}>
-                        <Users className="h-4 w-4 mr-2" /> Novo Admin
+                      <DropdownMenuItem onClick={() => { setSelectedIntegratorId(integrator.id); setIsCreateUserDialogOpen(true); setNewUserType(""); setNewUserBuildingId(""); }}>
+                        <Users className="h-4 w-4 mr-2" /> Novo Usuário
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setSelectedIntegratorForList(integrator.id); setShowUsersList(true); }}>
+                        <Users className="h-4 w-4 mr-2" /> Listar Usuários
                       </DropdownMenuItem>
                       <DropdownMenuItem>
                         <Settings className="h-4 w-4 mr-2" /> Configurar
@@ -245,6 +255,56 @@ export default function Integrators() {
                     </div>
                   </div>
                 )}
+
+
+                {/* Lista de Usuários */}
+                {showUsersList && selectedIntegratorForList === integrator.id && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium">Lista de Usuários</h4>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => { setShowUsersList(false); setSelectedIntegratorForList(null); }}
+                      >
+                        Voltar
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {/* Mock de usuários para este integrador */}
+                      {[
+                        { id: "1", name: "João Silva", email: "joao@email.com", type: "Porteiro", status: "online" },
+                        { id: "2", name: "Maria Santos", email: "maria@email.com", type: "Porteiro Remoto", status: "online" },
+                        { id: "3", name: "Admin Centro", email: "admin@centro.com", type: "Admin Integrador", status: "online" }
+                      ].map((user) => (
+                        <Card key={user.id} className="border border-muted">
+                          <CardContent className="p-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h5 className="font-medium text-sm">{user.name}</h5>
+                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant="outline" className="text-xs">{user.type}</Badge>
+                                  <Badge variant={user.status === "online" ? "default" : "secondary"} className="text-xs">
+                                    {user.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 
                 <div className="pt-2 border-t">
                   <div className="flex items-center justify-between text-sm">
@@ -269,6 +329,21 @@ export default function Integrators() {
             <DialogTitle>Adicionar Condomínio</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {selectedIntegratorId === null && (
+              <div>
+                <Label>Integrador</Label>
+                <Select onValueChange={(v) => setSelectedIntegratorId(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o integrador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {integrators.map((i) => (
+                      <SelectItem key={i.id} value={i.id}>{i.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label htmlFor="buildingName">Nome do Condomínio</Label>
               <Input id="buildingName" placeholder="Ex: Residencial Vista Bela" />
@@ -444,26 +519,52 @@ export default function Integrators() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para criar Admin do Integrador */}
-      <Dialog open={isCreateAdminDialogOpen} onOpenChange={setIsCreateAdminDialogOpen}>
+      {/* Dialog para criar Usuário do Integrador */}
+      <Dialog open={isCreateUserDialogOpen} onOpenChange={setIsCreateUserDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Novo Admin do Integrador</DialogTitle>
+            <DialogTitle>Novo Usuário</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="adminName">Nome Completo</Label>
-              <Input id="adminName" placeholder="Nome do administrador" />
+              <Label htmlFor="userName">Nome Completo</Label>
+              <Input id="userName" placeholder="Nome do usuário" />
             </div>
             <div>
-              <Label htmlFor="adminEmail">Email</Label>
-              <Input id="adminEmail" type="email" placeholder="email@exemplo.com" />
+              <Label htmlFor="userEmail">Email</Label>
+              <Input id="userEmail" type="email" placeholder="email@exemplo.com" />
             </div>
             <div>
-              <Label htmlFor="adminPassword">Senha</Label>
-              <Input id="adminPassword" type="password" placeholder="Senha temporária" />
+              <Label>Tipo de Perfil</Label>
+              <Select value={newUserType} onValueChange={setNewUserType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Admin Integrador">Admin Integrador</SelectItem>
+                  <SelectItem value="Porteiro Remoto">Porteiro Remoto</SelectItem>
+                  <SelectItem value="Porteiro">Porteiro</SelectItem>
+                  <SelectItem value="Atendimento">Atendimento</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Button className="w-full">Criar Administrador</Button>
+            {newUserType === "Porteiro Remoto" && (
+              <div>
+                <Label>Condomínio (opcional)</Label>
+                <Select value={newUserBuildingId} onValueChange={setNewUserBuildingId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os condomínios" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos os condomínios</SelectItem>
+                    {(integrators.find((i) => i.id === selectedIntegratorId)?.buildings || []).map((b: any) => (
+                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <Button className="w-full">Criar Usuário</Button>
           </div>
         </DialogContent>
       </Dialog>
