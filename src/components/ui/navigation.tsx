@@ -1,4 +1,4 @@
-import { Building, Users, Settings, Shield, BarChart3, UserCheck, UserCog } from "lucide-react";
+import { Building, Users, Settings, Shield, BarChart3, UserCheck, UserCog, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavigationProps {
@@ -9,6 +9,7 @@ interface NavigationProps {
 const navigationItems = [
   { id: "dashboard", label: "Dashboard", icon: BarChart3 },
   { id: "integradores", label: "Integradores", icon: Building },
+  { id: "fila-atendimento", label: "Fila de Atendimento", icon: Phone },
   // { id: "grupos-acesso", label: "Grupos de Acesso", icon: UserCheck }, // Removido: grupos de acesso não são mais necessários
   // { id: "configuracoes", label: "Configurações", icon: Settings }, // Comentado: configurações já existem por condomínio
 ];
