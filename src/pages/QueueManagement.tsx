@@ -159,6 +159,23 @@ const generateMockCall = (): Call => {
   };
 };
 
+// Interface para eventos do histórico
+interface CallEvent {
+  timestamp: Date;
+  type: "call_started" | "calling_resident" | "resident_answered" | "resident_rejected" | "on_hold" | "resumed" | "access_granted" | "access_denied" | "call_ended" | "observation_added";
+  description: string;
+  duration?: number;
+}
+
+// Interface estendida para chamadas com histórico
+interface CallWithHistory extends Call {
+  events: CallEvent[];
+  residentCallDuration?: number;
+  residentCallStartTime?: Date;
+  totalDuration?: number;
+  finalStatus?: "granted" | "denied" | "missed";
+}
+
 export default function QueueManagement() {
   const [calls, setCalls] = useState<Call[]>([]);
   const [activeCall, setActiveCall] = useState<Call | null>(null);
@@ -167,7 +184,7 @@ export default function QueueManagement() {
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [callDuration, setCallDuration] = useState(0);
   const [showVisitForm, setShowVisitForm] = useState(false);
-  const [videoScene, setVideoScene] = useState(0); // Para variar a cena do vídeo
+  const [videoScene, setVideoScene] = useState(0);
   const [isCallingDestination, setIsCallingDestination] = useState(false);
   const [destinationResponse, setDestinationResponse] = useState<"pending" | "approved" | "rejected" | null>(null);
   const [isReturningToCaller, setIsReturningToCaller] = useState(false);
@@ -184,6 +201,24 @@ export default function QueueManagement() {
     visitReason: "",
     notes: ""
   });
+  
+  // Novos estados para controle de chamadas e histórico
+  const [callHistory, setCallHistory] = useState<CallWithHistory[]>([]);
+  const [missedCalls, setMissedCalls] = useState<CallWithHistory[]>([]);
+  const [completedCalls, setCompletedCalls] = useState<CallWithHistory[]>([]);
+  const [residentCallDuration, setResidentCallDuration] = useState(0);
+  const [isOnCallWithResident, setIsOnCallWithResident] = useState(false);
+  const [residentCallStartTime, setResidentCallStartTime] = useState<Date | null>(null);
+  const [currentCallEvents, setCurrentCallEvents] = useState<CallEvent[]>([]);
+  const [activeSection, setActiveSection] = useState<"waiting" | "missed" | "completed">("waiting");
+  const [showQuickCallDialog, setShowQuickCallDialog] = useState(false);
+  const [quickCallMode, setQuickCallMode] = useState<"resident" | "direct">("resident");
+  const [quickCallData, setQuickCallData] = useState({
+    building: "",
+    apartment: "",
+    resident: "",
+    directNumber: ""
+  });
 
   // Simular chegada de novas chamadas
   useEffect(() => {
@@ -197,15 +232,26 @@ export default function QueueManagement() {
     return () => clearInterval(interval);
   }, []);
 
-  // Timer para duração da chamada ativa
+  // Timer para duração da chamada ativa (interfone)
   useEffect(() => {
-    if (activeCall && !isOnHold) {
+    if (activeCall && !isOnHold && !isOnCallWithResident) {
       const interval = setInterval(() => {
         setCallDuration(prev => prev + 1);
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [activeCall, isOnHold]);
+  }, [activeCall, isOnHold, isOnCallWithResident]);
+
+  // Timer para duração da chamada com morador
+  useEffect(() => {
+    if (isOnCallWithResident && residentCallStartTime) {
+      const interval = setInterval(() => {
+        const duration = Math.floor((Date.now() - residentCallStartTime.getTime()) / 1000);
+        setResidentCallDuration(duration);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isOnCallWithResident, residentCallStartTime]);
 
   // Alternar cenas do vídeo a cada 5 segundos
   useEffect(() => {
@@ -430,6 +476,17 @@ export default function QueueManagement() {
     return scenes[(videoScene + 2) % 3]();
   };
 
+  // Função helper para adicionar eventos ao histórico
+  const addCallEvent = (type: CallEvent["type"], description: string, duration?: number) => {
+    const event: CallEvent = {
+      timestamp: new Date(),
+      type,
+      description,
+      duration
+    };
+    setCurrentCallEvents(prev => [...prev, event]);
+  };
+
   const handleAnswerCall = (call: Call) => {
     if (activeCall) {
       // Colocar chamada atual em espera
@@ -440,6 +497,10 @@ export default function QueueManagement() {
     setActiveCall({ ...call, status: "active" });
     setCalls(prev => prev.filter(c => c.id !== call.id));
     setCallDuration(0);
+    setCurrentCallEvents([]);
+    
+    // Registrar início do atendimento
+    addCallEvent("call_started", `Atendimento iniciado - ${call.callerName} (${call.building})`);
     
     // Mostrar formulário de anotação para TODAS as chamadas
     setShowVisitForm(true);
@@ -459,7 +520,32 @@ export default function QueueManagement() {
     }
   };
 
-  const handleEndCall = () => {
+  const handleEndCall = (finalStatus?: "granted" | "denied" | "missed") => {
+    if (!activeCall) return;
+    
+    // Registrar evento de finalização
+    const statusMsg = finalStatus === "granted" ? "Acesso liberado" : 
+                      finalStatus === "denied" ? "Acesso negado" : 
+                      "Chamada encerrada";
+    addCallEvent("call_ended", statusMsg, callDuration);
+    
+    // Criar registro completo da chamada
+    const completedCall: CallWithHistory = {
+      ...activeCall,
+      events: currentCallEvents,
+      residentCallDuration,
+      totalDuration: callDuration,
+      finalStatus: finalStatus || "missed"
+    };
+    
+    // Adicionar à lista apropriada
+    if (finalStatus === "granted" || finalStatus === "denied") {
+      setCompletedCalls(prev => [completedCall, ...prev]);
+    } else {
+      setMissedCalls(prev => [completedCall, ...prev]);
+    }
+    
+    // Limpar estados
     setActiveCall(null);
     setIsOnHold(false);
     setIsMuted(false);
@@ -469,7 +555,11 @@ export default function QueueManagement() {
     setDestinationResponse(null);
     setIsCallingDestination(false);
     setIsReturningToCaller(false);
+    setIsOnCallWithResident(false);
+    setResidentCallStartTime(null);
+    setResidentCallDuration(0);
     setCurrentStep("data");
+    setCurrentCallEvents([]);
     setReleaseProcess({ status: "pending", documentsCollected: false, photosTaken: false });
     setVisitData({
       callerName: "",
@@ -479,19 +569,141 @@ export default function QueueManagement() {
       notes: ""
     });
   };
+  
+  // Função para liberar entrada, salvar dados e finalizar chamada
+  const handleGrantAccess = () => {
+    if (!activeCall) return;
+    
+    // Salvar todos os dados do visitante
+    const visitInfo = {
+      name: visitData.fullName || visitData.callerName,
+      cpf: visitData.cpf,
+      rg: visitData.rg,
+      reason: visitData.visitReason,
+      vehicle: visitData.carModel,
+      plate: visitData.carPlate,
+      apartment: visitData.apartment,
+      resident: visitData.residentName,
+      building: activeCall.building,
+      notes: visitData.notes
+    };
+    
+    console.log("Dados salvos:", visitInfo);
+    
+    // Salvar observações no histórico
+    if (visitData.notes) {
+      addCallEvent("observation_added", `Observação: ${visitData.notes}`);
+    }
+    
+    // Registrar liberação com detalhes
+    addCallEvent("access_granted", `Acesso liberado para ${visitData.fullName || visitData.callerName} - ${visitData.cpf || 'sem CPF'} - Destino: ${visitData.apartment || 'não informado'}`);
+    
+    // Finalizar com sucesso
+    handleEndCall("granted");
+    
+    alert("✅ Acesso liberado e dados salvos com sucesso!");
+  };
+  
+  // Função para negar entrada, salvar dados e finalizar chamada
+  const handleDenyAccess = () => {
+    if (!activeCall) return;
+    
+    // Salvar todos os dados do visitante (mesmo negado)
+    const visitInfo = {
+      name: visitData.fullName || visitData.callerName,
+      cpf: visitData.cpf,
+      rg: visitData.rg,
+      reason: visitData.visitReason,
+      vehicle: visitData.carModel,
+      plate: visitData.carPlate,
+      apartment: visitData.apartment,
+      resident: visitData.residentName,
+      building: activeCall.building,
+      notes: visitData.notes
+    };
+    
+    console.log("Dados salvos (acesso negado):", visitInfo);
+    
+    // Salvar observações no histórico
+    if (visitData.notes) {
+      addCallEvent("observation_added", `Observação: ${visitData.notes}`);
+    }
+    
+    // Registrar negação com detalhes
+    addCallEvent("access_denied", `Acesso negado para ${visitData.fullName || visitData.callerName} - Motivo: ${visitData.notes || 'Não autorizado'}`);
+    
+    // Finalizar com negação
+    handleEndCall("denied");
+    
+    alert("🚫 Acesso negado e dados salvos!");
+  };
+
+  // Função para fazer ligação rápida
+  const handleQuickCall = () => {
+    if (quickCallMode === "resident") {
+      if (!quickCallData.building || !quickCallData.apartment) {
+        alert("Por favor, selecione o condomínio e o apartamento.");
+        return;
+      }
+      
+      alert(`📞 Ligando para ${quickCallData.resident || "morador"} - ${quickCallData.apartment} (${quickCallData.building})`);
+      
+      // Aqui você implementaria a lógica real de ligação
+      // Por enquanto, apenas fecha o dialog
+      setShowQuickCallDialog(false);
+      setQuickCallData({ building: "", apartment: "", resident: "", directNumber: "" });
+      
+    } else {
+      if (!quickCallData.directNumber) {
+        alert("Por favor, digite o número para ligar.");
+        return;
+      }
+      
+      alert(`📞 Ligando para ${quickCallData.directNumber}`);
+      
+      // Aqui você implementaria a lógica real de ligação direta
+      setShowQuickCallDialog(false);
+      setQuickCallData({ building: "", apartment: "", resident: "", directNumber: "" });
+    }
+  };
 
   const handleSaveVisitData = () => {
-    // Aqui você pode salvar os dados da visita
+    // Salvar observações no histórico
+    if (visitData.notes) {
+      addCallEvent("observation_added", `Observação: ${visitData.notes}`);
+    }
+    
     console.log("Dados da visita:", visitData);
-    alert("Dados da visita salvos com sucesso!");
-    // Modal permanece aberto - não fechamos o showVisitForm
+    
+    // Se for morador ou elevador, finalizar automaticamente a ligação
+    if (activeCall && (activeCall.type === "resident_call" || activeCall.type === "elevator")) {
+      addCallEvent("call_ended", `Atendimento finalizado - Observações salvas`);
+      alert("✅ Observações salvas e chamada finalizada!");
+      handleEndCall("granted");
+    } else {
+      alert("✅ Observações salvas com sucesso!");
+    }
   };
 
   const handleCallDestination = () => {
-    if (!visitData.apartment || !visitData.residentName) {
-      alert("Por favor, preencha o apartamento e o nome do morador antes de ligar.");
+    if (!visitData.apartment) {
+      alert("Por favor, selecione o apartamento antes de ligar.");
       return;
     }
+    
+    // PAUSAR a ligação com o interfone automaticamente
+    if (!isOnHold) {
+      setIsOnHold(true);
+      addCallEvent("on_hold", "Interfone colocado em espera para ligar ao morador");
+    }
+    
+    // Registrar evento de início de ligação para morador
+    addCallEvent("calling_resident", `Ligando para ${visitData.residentName || "morador"} - ${visitData.apartment}`);
+    
+    // Iniciar timer da ligação com morador
+    setIsOnCallWithResident(true);
+    setResidentCallStartTime(new Date());
+    setResidentCallDuration(0);
     
     // Simular ligação para o destino
     setIsCallingDestination(true);
@@ -505,7 +717,34 @@ export default function QueueManagement() {
       const responses: ("approved" | "rejected")[] = ["approved", "rejected"];
       const response = responses[Math.floor(Math.random() * responses.length)];
       setDestinationResponse(response);
+      
+      // Registrar resposta
+      if (response === "approved") {
+        addCallEvent("resident_answered", `Morador autorizou a entrada`, residentCallDuration);
+      } else {
+        addCallEvent("resident_rejected", `Morador negou a entrada`, residentCallDuration);
+      }
     }, Math.random() * 2000 + 3000); // Entre 3 e 5 segundos
+  };
+  
+  // Nova função para desligar da ligação com morador e voltar para interfone
+  const handleHangUpResident = () => {
+    if (isOnCallWithResident) {
+      // Registrar evento de fim da ligação com morador
+      addCallEvent("resumed", `Desligou do morador após ${formatTime(residentCallDuration)} - Retornando para interfone`);
+      
+      // Desligar da chamada com morador
+      setIsOnCallWithResident(false);
+      setResidentCallStartTime(null);
+      setResidentCallDuration(0);
+      setCurrentStep("data");
+      
+      // RETOMAR automaticamente a ligação com o interfone
+      if (isOnHold) {
+        setIsOnHold(false);
+        addCallEvent("resumed", "Interfone retomado automaticamente");
+      }
+    }
   };
 
   const handleApproveAccess = () => {
@@ -601,12 +840,159 @@ export default function QueueManagement() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowQuickCallDialog(true)}
+            className="h-9"
+          >
+            <Phone className="h-4 w-4 mr-2" />
+            Ligação Rápida
+          </Button>
           <Badge variant="outline" className="flex items-center gap-1">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             Online
           </Badge>
         </div>
       </div>
+
+      {/* Modal de Ligação Rápida */}
+      {showQuickCallDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowQuickCallDialog(false)}>
+          <Card className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Phone className="h-5 w-5 text-blue-600" />
+                  Ligação Rápida
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowQuickCallDialog(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {/* Seletor de Modo */}
+              <div className="flex gap-2 mb-4">
+                <Button 
+                  variant={quickCallMode === "resident" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setQuickCallMode("resident")}
+                >
+                  <User className="h-4 w-4 mr-1" />
+                  Ligar para Morador
+                </Button>
+                <Button 
+                  variant={quickCallMode === "direct" ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setQuickCallMode("direct")}
+                >
+                  <Phone className="h-4 w-4 mr-1" />
+                  Discar Número
+                </Button>
+              </div>
+
+              {/* Modo: Ligar para Morador */}
+              {quickCallMode === "resident" && (
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="quickBuilding" className="text-sm">Condomínio</Label>
+                    <Select 
+                      value={quickCallData.building} 
+                      onValueChange={(value) => setQuickCallData(prev => ({ ...prev, building: value }))}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Selecione o condomínio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {mockBuildings.map((building) => (
+                          <SelectItem key={building} value={building}>
+                            {building}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="quickApartment" className="text-sm">Apartamento</Label>
+                    <Select 
+                      value={quickCallData.apartment} 
+                      onValueChange={(value) => {
+                        setQuickCallData(prev => ({ ...prev, apartment: value }));
+                        const mockResident = value ? mockResidents[Math.floor(Math.random() * mockResidents.length)] : "";
+                        setQuickCallData(prev => ({ ...prev, resident: mockResident }));
+                      }}
+                      disabled={!quickCallData.building}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Selecione o apartamento" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60">
+                        {mockBlocks.map(block => (
+                          <div key={block}>
+                            <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-gray-100">
+                              Bloco {block}
+                            </div>
+                            {mockApartments.slice(0, 10).map(apt => (
+                              <SelectItem key={`${block}-${apt}`} value={`${block}-${apt}`}>
+                                Bloco {block} - Apto {apt}
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {quickCallData.apartment && (
+                    <div className="p-2 bg-gray-50 border rounded">
+                      <div className="text-sm font-medium">Morador: {quickCallData.resident}</div>
+                      <div className="text-xs text-muted-foreground">{quickCallData.apartment}</div>
+                    </div>
+                  )}
+
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    onClick={handleQuickCall}
+                    disabled={!quickCallData.building || !quickCallData.apartment}
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    Ligar para Morador
+                  </Button>
+                </div>
+              )}
+
+              {/* Modo: Discar Número Direto */}
+              {quickCallMode === "direct" && (
+                <div className="space-y-3">
+                  <div>
+                    <Label htmlFor="quickNumber" className="text-sm">Número de Telefone</Label>
+                    <Input 
+                      id="quickNumber"
+                      type="tel"
+                      value={quickCallData.directNumber}
+                      onChange={(e) => setQuickCallData(prev => ({ ...prev, directNumber: e.target.value }))}
+                      placeholder="(11) 98765-4321"
+                      className="h-9"
+                    />
+                  </div>
+
+                  <Button 
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    onClick={handleQuickCall}
+                    disabled={!quickCallData.directNumber}
+                  >
+                    <Phone className="h-4 w-4 mr-2" />
+                    Discar Número
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Layout 3 Colunas - Estilo Central de Portaria */}
       {activeCall && activeCall.hasVideo && (
@@ -645,9 +1031,9 @@ export default function QueueManagement() {
                       <VideoOff className="h-8 w-8" />
                     </div>
                   )}
+                  </div>
                 </div>
-              </div>
-
+                
               {/* Feeds Secundários - Lado a Lado */}
               <div className="grid grid-cols-2 gap-2">
                 {/* Câmera 2 - Placa */}
@@ -691,16 +1077,24 @@ export default function QueueManagement() {
 
               {/* Controles da Chamada */}
               <div className="mt-3 pt-3 border-t border-gray-700">
+                {/* Indicador de status do interfone */}
+                {isOnHold && (
+                  <div className="mb-2 p-1.5 bg-yellow-900/30 border border-yellow-600 rounded flex items-center gap-1">
+                    <Pause className="h-3 w-3 text-yellow-400" />
+                    <span className="text-[10px] text-yellow-300">Interfone em espera</span>
+                  </div>
+                )}
+                
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="text-xs text-gray-400">Tempo:</div>
-                    <div className="text-sm font-mono font-bold text-cyan-400">
-                      {formatTime(callDuration)}
+                <div className="flex items-center gap-2">
+                    <div className="text-xs text-gray-400">Interfone:</div>
+                    <div className={`text-sm font-mono font-bold ${isOnHold ? 'text-yellow-400' : 'text-cyan-400'}`}>
+                      {isOnHold ? '⏸️' : formatTime(callDuration)}
                     </div>
                   </div>
                   <Badge variant={getPriorityColor(activeCall.priority)} className="text-[10px]">
-                    {getPriorityLabel(activeCall.priority)}
-                  </Badge>
+                      {getPriorityLabel(activeCall.priority)}
+                    </Badge>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button variant="outline" size="sm" onClick={handleHoldCall} className="flex-1 h-7 text-xs">
@@ -711,13 +1105,13 @@ export default function QueueManagement() {
                     {isMuted ? <MicOff className="h-3 w-3 mr-1" /> : <Mic className="h-3 w-3 mr-1" />}
                     {isMuted ? "Ativar" : "Mutar"}
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={handleEndCall} className="h-7 px-2">
+                  <Button variant="destructive" size="sm" onClick={() => handleEndCall()} className="h-7 px-2">
                     <PhoneOff className="h-3 w-3" />
                   </Button>
                 </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
           {/* COLUNA CENTRAL (45%) - Fluxo de Atendimento Compacto */}
           <div className="lg:col-span-5 space-y-1.5">
@@ -745,6 +1139,44 @@ export default function QueueManagement() {
                   {currentStep === "complete" && "✅ OK"}
                 </div>
               </div>
+
+              {/* Indicador de Ligação Ativa com Morador */}
+              {isOnCallWithResident && (
+                <div className="mb-2 p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg border-2 border-blue-400 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white/20 p-2 rounded-full">
+                        <Phone className="h-5 w-5 text-white animate-pulse" />
+                      </div>
+                      <div className="text-white">
+                        <div className="text-sm font-semibold">Em ligação com morador</div>
+                        <div className="text-xs opacity-90">
+                          {visitData.residentName || "Morador"} - {visitData.apartment}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <div className="text-2xl font-mono font-bold text-white">
+                          {formatTime(residentCallDuration)}
+                        </div>
+                        <div className="text-xs text-white/80">tempo de ligação</div>
+                      </div>
+                      
+                      <Button 
+                        variant="destructive"
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 h-10 px-4"
+                        onClick={handleHangUpResident}
+                      >
+                        <PhoneOff className="h-4 w-4 mr-2" />
+                        Desligar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Grid 2 colunas para visitante e morador */}
               <div className="grid grid-cols-2 gap-2">
@@ -853,7 +1285,7 @@ export default function QueueManagement() {
                           <p className="text-[10px] text-yellow-800">⚠️ Sem entregas após 22h</p>
                         </div>
                         <div className="grid grid-cols-2 gap-1">
-                          <Button 
+                <Button
                             onClick={handleCallDestination}
                             className="bg-blue-600 hover:bg-blue-700 h-7 text-[10px] px-2"
                             disabled={isCallingDestination}
@@ -863,7 +1295,7 @@ export default function QueueManagement() {
                             ) : (
                               <><Phone className="h-3 w-3 mr-1" /> Interfone</>
                             )}
-                          </Button>
+                </Button>
                           <Button variant="outline" className="h-7 text-[10px] px-2">
                             <Phone className="h-3 w-3 mr-1" /> Celular
                           </Button>
@@ -887,21 +1319,23 @@ export default function QueueManagement() {
               <div className="space-y-2">
                 <Button 
                   className="w-full h-12 bg-green-600 hover:bg-green-700 text-white font-semibold"
-                  onClick={() => alert("Portão liberado!")}
+                  onClick={handleGrantAccess}
+                  disabled={!activeCall}
                 >
-                  <Building className="h-4 w-4 mr-2" />
-                  LIBERAR ENTRADA
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Liberar Entrada e Salvar
                 </Button>
                 
                 <Button 
                   className="w-full h-12 bg-red-600 hover:bg-red-700 text-white font-semibold"
-                  onClick={() => alert("Entrada negada!")}
+                  onClick={handleDenyAccess}
+                  disabled={!activeCall}
                 >
-                  <X className="h-4 w-4 mr-2" />
-                  NEGAR ENTRADA
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Negar Entrada e Salvar
                 </Button>
                 
-                <Button 
+                <Button
                   className="w-full h-10 bg-amber-500 hover:bg-amber-600 text-white font-semibold border-2 border-amber-300 animate-pulse"
                   onClick={() => alert("Alerta de pânico ativado!")}
                 >
@@ -909,30 +1343,53 @@ export default function QueueManagement() {
                 </Button>
               </div>
               
-              {/* Histórico Recente */}
+              {/* Histórico de Eventos da Chamada Atual */}
               <div className="mt-4 pt-4 border-t">
-                <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase">Histórico Recente</h4>
+                <h4 className="text-xs font-semibold text-gray-700 mb-2 uppercase">
+                  {activeCall ? "Eventos desta Chamada" : "Últimas Chamadas"}
+                </h4>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                  <div className="text-xs p-2 bg-gray-50 rounded border-l-2 border-green-500">
-                    <div className="font-mono text-gray-500">08:22</div>
-                    <div className="text-gray-700">[Veículo Entrou] Placa HJK-5678 liberada para Apto 301 pelo Op. Carlos S.</div>
-                  </div>
-                  <div className="text-xs p-2 bg-gray-50 rounded border-l-2 border-blue-500">
-                    <div className="font-mono text-gray-500">08:20</div>
-                    <div className="text-gray-700">[Pedestre Saiu] Visitante de Maria Costa (Apto 502) deixou o condomínio.</div>
-                  </div>
-                  <div className="text-xs p-2 bg-gray-50 rounded border-l-2 border-red-500">
-                    <div className="font-mono text-gray-500">08:18</div>
-                    <div className="text-gray-700">[Alerta] Tentativa de entrada sem interfone na Portaria 2.</div>
-                  </div>
-                  <div className="text-xs p-2 bg-gray-50 rounded border-l-2 border-purple-500">
-                    <div className="font-mono text-gray-500">08:15</div>
-                    <div className="text-gray-700">[App] Morador João P. (Apto 101) liberou QR Code para visitante "Ana Clara".</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                  {activeCall && currentCallEvents.length > 0 ? (
+                    currentCallEvents.map((event, index) => {
+                      const borderColor = 
+                        event.type === "call_started" ? "border-blue-500" :
+                        event.type === "calling_resident" ? "border-purple-500" :
+                        event.type === "resident_answered" ? "border-green-500" :
+                        event.type === "resident_rejected" ? "border-red-500" :
+                        event.type === "access_granted" ? "border-green-600" :
+                        event.type === "access_denied" ? "border-red-600" :
+                        "border-gray-400";
+                      
+                      return (
+                        <div key={index} className={`text-xs p-2 bg-gray-50 rounded border-l-2 ${borderColor}`}>
+                          <div className="font-mono text-gray-500">
+                            {event.timestamp.toLocaleTimeString('pt-BR')}
+                            {event.duration !== undefined && ` (${formatTime(event.duration)})`}
+                        </div>
+                          <div className="text-gray-700">{event.description}</div>
+                      </div>
+                      );
+                    })
+                  ) : (
+                    <>
+                      {completedCalls.slice(0, 4).map((call, index) => (
+                        <div key={index} className={`text-xs p-2 bg-gray-50 rounded border-l-2 ${
+                          call.finalStatus === "granted" ? "border-green-500" : "border-red-500"
+                        }`}>
+                          <div className="font-mono text-gray-500">
+                            {call.startTime.toLocaleTimeString('pt-BR')}
+                        </div>
+                          <div className="text-gray-700">
+                            [{call.finalStatus === "granted" ? "Liberado" : "Negado"}] {call.callerName} - {call.building}
+                      </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                      </div>
+                        </div>
+                      </div>
+                      </div>
         </div>
       )}
 
@@ -986,16 +1443,16 @@ export default function QueueManagement() {
                         "bg-gray-200 text-gray-600"
                       }`}>
                         {step}
-                      </div>
+                  </div>
                       {step < 4 && (
                         <div className={`w-4 h-0.5 mx-1 ${
                           (currentStep === "call" && step < 2) || 
                           (currentStep === "documents" && step < 3) || 
                           (currentStep === "photos" && step < 4) || 
                           (currentStep === "complete" && step < 4) ? "bg-green-600" : "bg-gray-200"
-                        }`}></div>
+                    }`}></div>
                       )}
-                    </div>
+                  </div>
                   ))}
                 </div>
               </div>
@@ -1335,17 +1792,17 @@ export default function QueueManagement() {
                       {activeCall.hasVideo && (
                         <div><span className="font-medium">Vídeo:</span> {isVideoEnabled ? "Ativo" : "Off"}</div>
                       )}
-                    </div>
-                  </div>
+                          </div>
+                      </div>
 
                   {/* Ações Rápidas */}
                   <div className="bg-white p-3 rounded border">
                     <h4 className="font-medium text-xs mb-2 text-green-600">⚡ Ações Rápidas</h4>
-                    <div className="space-y-2">
+                      <div className="space-y-2">
                       <Button size="sm" className="w-full h-8 text-xs" variant="outline">
                         <Camera className="h-3 w-3 mr-1" />
                         Capturar Foto
-                      </Button>
+                        </Button>
                       <Button size="sm" className="w-full h-8 text-xs" variant="outline">
                         <FileText className="h-3 w-3 mr-1" />
                         Gerar Relatório
@@ -1353,7 +1810,7 @@ export default function QueueManagement() {
                       <Button size="sm" className="w-full h-8 text-xs" variant="outline">
                         <Save className="h-3 w-3 mr-1" />
                         Salvar Dados
-                      </Button>
+                        </Button>
                     </div>
                   </div>
                 </div>
@@ -1502,9 +1959,11 @@ export default function QueueManagement() {
                   <Button variant="outline" onClick={() => setShowVisitForm(false)}>
                     Cancelar
                   </Button>
-                  <Button onClick={handleSaveVisitData}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Salvar Observações
+                  <Button onClick={handleSaveVisitData} className="bg-green-600 hover:bg-green-700">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    {activeCall?.type === "resident_call" || activeCall?.type === "elevator" 
+                      ? "Finalizar Atendimento" 
+                      : "Salvar Observações"}
                   </Button>
                 </div>
               </div>
@@ -1552,21 +2011,46 @@ export default function QueueManagement() {
         </Card>
       )}
 
-      {/* Fila de Chamadas Aguardando */}
+      {/* Seções de Chamadas com Tabs */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Phone className="h-5 w-5" />
-              Fila de Atendimento ({waitingCalls.length})
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between mb-2">
+            <CardTitle className="text-lg">Gerenciamento de Chamadas</CardTitle>
+            <div className="flex gap-1">
+              <Button 
+                variant={activeSection === "waiting" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => setActiveSection("waiting")}
+                className="h-7 text-xs"
+              >
+                <Phone className="h-3 w-3 mr-1" />
+                Aguardando ({waitingCalls.length})
+              </Button>
+              <Button 
+                variant={activeSection === "missed" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => setActiveSection("missed")}
+                className="h-7 text-xs"
+              >
+                <PhoneOff className="h-3 w-3 mr-1" />
+                Perdidas ({missedCalls.length})
+              </Button>
+              <Button 
+                variant={activeSection === "completed" ? "default" : "outline"} 
+                size="sm"
+                onClick={() => setActiveSection("completed")}
+                className="h-7 text-xs"
+              >
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Finalizadas ({completedCalls.length})
+              </Button>
             </div>
-            <Badge variant="outline">
-              Próxima em {waitingCalls.length > 0 ? "1 min" : "---"}
-            </Badge>
-          </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent>
-          {waitingCalls.length === 0 ? (
+        <CardContent className="pt-3">
+          {/* Seção: Aguardando Atendimento */}
+          {activeSection === "waiting" && (
+            waitingCalls.length === 0 ? (
             <Alert>
               <AlertDescription>
                 Nenhuma chamada aguardando atendimento no momento.
@@ -1576,8 +2060,8 @@ export default function QueueManagement() {
             <div className="space-y-3">
               {waitingCalls
                 .sort((a, b) => {
-                  const priorityOrder = { high: 3, medium: 2, low: 1 };
-                  return priorityOrder[b.priority] - priorityOrder[a.priority];
+                    const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+                    return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
                 })
                 .map((call, index) => (
                   <div
@@ -1618,8 +2102,7 @@ export default function QueueManagement() {
                           Aguardando há {Math.floor((Date.now() - call.startTime.getTime()) / 1000)}s
                         </p>
                         <Badge variant={getPriorityColor(call.priority)}>
-                          {call.priority === "high" ? "Alta Prioridade" : 
-                           call.priority === "medium" ? "Média Prioridade" : "Baixa Prioridade"}
+                            {getPriorityLabel(call.priority)}
                         </Badge>
                       </div>
                       
@@ -1634,12 +2117,127 @@ export default function QueueManagement() {
                   </div>
                 ))}
             </div>
+            )
+          )}
+
+          {/* Seção: Chamadas Perdidas */}
+          {activeSection === "missed" && (
+            missedCalls.length === 0 ? (
+              <Alert>
+                <AlertDescription>
+                  Nenhuma chamada perdida no momento.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-3">
+                {missedCalls.map((call) => (
+                  <div
+                    key={call.id}
+                    className="p-4 border border-red-200 rounded-lg bg-red-50"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="font-semibold text-red-800">{call.callerName}</p>
+                        <p className="text-sm text-red-600">{call.building} {call.apartment && `- ${call.apartment}`}</p>
+                      </div>
+                      <Badge variant="destructive">Perdida</Badge>
+                    </div>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <div>Início: {call.startTime.toLocaleString('pt-BR')}</div>
+                      <div>Duração total: {formatTime(call.totalDuration || 0)}</div>
+                      {call.events && call.events.length > 0 && (
+                        <details className="mt-2">
+                          <summary className="cursor-pointer text-blue-600 hover:underline">
+                            Ver eventos ({call.events.length})
+                          </summary>
+                          <div className="mt-2 space-y-1 pl-2 border-l-2 border-gray-300">
+                            {call.events.map((event, i) => (
+                              <div key={i} className="text-xs">
+                                {event.timestamp.toLocaleTimeString('pt-BR')} - {event.description}
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {/* Seção: Chamadas Finalizadas */}
+          {activeSection === "completed" && (
+            completedCalls.length === 0 ? (
+              <Alert>
+                <AlertDescription>
+                  Nenhuma chamada finalizada ainda.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="space-y-3">
+                {completedCalls.map((call) => (
+                  <div
+                    key={call.id}
+                    className={`p-4 border rounded-lg ${
+                      call.finalStatus === "granted" 
+                        ? "border-green-200 bg-green-50" 
+                        : "border-red-200 bg-red-50"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className={`font-semibold ${
+                          call.finalStatus === "granted" ? "text-green-800" : "text-red-800"
+                        }`}>
+                          {call.callerName}
+                        </p>
+                        <p className={`text-sm ${
+                          call.finalStatus === "granted" ? "text-green-600" : "text-red-600"
+                        }`}>
+                          {call.building} {call.apartment && `- ${call.apartment}`}
+                        </p>
+                      </div>
+                      <Badge variant={call.finalStatus === "granted" ? "default" : "destructive"}>
+                        {call.finalStatus === "granted" ? "✅ Liberado" : "🚫 Negado"}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <div>Início: {call.startTime.toLocaleString('pt-BR')}</div>
+                      <div>Duração total: {formatTime(call.totalDuration || 0)}</div>
+                      {call.residentCallDuration !== undefined && call.residentCallDuration > 0 && (
+                        <div>Tempo com morador: {formatTime(call.residentCallDuration)}</div>
+                      )}
+                      {call.events && call.events.length > 0 && (
+                        <details className="mt-2">
+                          <summary className="cursor-pointer text-blue-600 hover:underline">
+                            Ver histórico completo ({call.events.length} eventos)
+                          </summary>
+                          <div className="mt-2 space-y-1 pl-2 border-l-2 border-gray-300">
+                            {call.events.map((event, i) => (
+                              <div key={i} className="text-xs">
+                                <span className="font-mono text-gray-500">
+                                  {event.timestamp.toLocaleTimeString('pt-BR')}
+                                </span>
+                                {" - "}
+                                {event.description}
+                                {event.duration !== undefined && ` (${formatTime(event.duration)})`}
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </CardContent>
       </Card>
 
       {/* Estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -1648,18 +2246,6 @@ export default function QueueManagement() {
             </div>
             <div className="text-2xl font-bold mt-1">
               {activeCall ? 1 : 0}
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-yellow-500 rounded-full" />
-              <span className="text-sm font-medium">Em Espera</span>
-            </div>
-            <div className="text-2xl font-bold mt-1">
-              {onHoldCalls.length}
             </div>
           </CardContent>
         </Card>
@@ -1679,11 +2265,38 @@ export default function QueueManagement() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full" />
+              <span className="text-sm font-medium">Perdidas</span>
+            </div>
+            <div className="text-2xl font-bold mt-1">
+              {missedCalls.length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-600 rounded-full" />
+              <span className="text-sm font-medium">Finalizadas</span>
+            </div>
+            <div className="text-2xl font-bold mt-1">
+              {completedCalls.length}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
               <Clock className="h-3 w-3 text-muted-foreground" />
               <span className="text-sm font-medium">Tempo Médio</span>
             </div>
             <div className="text-2xl font-bold mt-1">
-              2m 30s
+              {completedCalls.length > 0 
+                ? formatTime(Math.floor(completedCalls.reduce((sum, call) => sum + (call.totalDuration || 0), 0) / completedCalls.length))
+                : "0:00"
+              }
             </div>
           </CardContent>
         </Card>
