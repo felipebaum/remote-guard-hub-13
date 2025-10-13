@@ -4,6 +4,7 @@ import { Navigation } from "@/components/ui/navigation";
 import Dashboard from "./Dashboard";
 import Integrators from "./Integrators";
 import QueueManagement from "./QueueManagement";
+import BuildingManagement from "./BuildingManagement";
 // import AccessGroups from "./AccessGroups"; // Removido: grupos de acesso não são mais necessários
 // import Settings from "./Settings"; // Comentado: configurações já existem por condomínio
 import BuildingDetails from "./BuildingDetails";
@@ -37,6 +38,8 @@ const Index = () => {
         return <Integrators />;
       case "fila-atendimento":
         return <QueueManagement />;
+      case "gerenciar-condominios":
+        return <BuildingManagement />;
       // case "configuracoes":
       //   return <Settings />; // Comentado: configurações já existem por condomínio
       default:

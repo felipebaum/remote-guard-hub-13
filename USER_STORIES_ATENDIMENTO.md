@@ -145,7 +145,8 @@
 **Para** contatar moradores ou discar números externos a qualquer momento  
 
 **Critérios de Aceitação:**
-- [ ] Botão "Ligação Rápida" no header da página
+- [ ] Botão "Ligação Rápida" no header da página (lado esquerdo)
+- [ ] Botão "Botão de Pânico" ao lado do botão de Ligação Rápida
 - [ ] Modal com 2 modos: "Ligar para Morador" e "Discar Número"
 - [ ] **Modo Morador**: Select de Condomínio → Select de Apartamento → Morador carregado → Ligar
 - [ ] **Modo Direto**: Campo para digitar número → Discar
@@ -161,6 +162,68 @@
 
 ---
 
+### US-F007B: Botão de Pânico (Header)
+**Como** porteiro remoto  
+**Quero** acionar um alerta de emergência rapidamente  
+**Para** solicitar ajuda imediata em situações de perigo ou emergência  
+
+**Critérios de Aceitação:**
+- [ ] Botão "Botão de Pânico" no header, ao lado do botão "Ligação Rápida"
+- [ ] Cor vermelha/laranja com ícone de alerta destacado
+- [ ] Ao clicar, mostrar modal de confirmação (evitar acionamento acidental)
+- [ ] Modal pergunta: "Tem certeza que deseja acionar o pânico?"
+- [ ] Ao confirmar: disparar alerta para supervisores/segurança
+- [ ] Notificação via WebSocket para todos os supervisores online
+- [ ] Registrar no banco: operador, timestamp, localização (IP/geolocalização)
+- [ ] Enviar SMS/WhatsApp para contatos de emergência
+- [ ] Gravar áudio/vídeo automaticamente se houver chamada ativa
+- [ ] Exibir toast de confirmação: "Alerta de pânico acionado - Ajuda a caminho"
+- [ ] Registrar no histórico de eventos da chamada (se houver chamada ativa)
+- [ ] Log de auditoria completo
+
+**Tarefas Técnicas:**
+- Criar botão destacado no header
+- Implementar modal de confirmação
+- Criar endpoint `POST /api/portaria/panico/acionar`
+- Integrar com sistema de notificações (WebSocket, SMS, WhatsApp)
+- Registrar evento no banco de dados
+- Capturar geolocalização/IP do operador
+- Notificar supervisores em tempo real
+- Adicionar ao histórico da chamada ativa (se aplicável)
+- Implementar sistema de auditoria
+
+---
+
+### US-F007C: Captura de Fotos das Câmeras
+**Como** porteiro remoto  
+**Quero** capturar fotos das câmeras durante o atendimento  
+**Para** ter registro visual do visitante, veículo e documentos  
+
+**Critérios de Aceitação:**
+- [ ] Botão "📸 Foto Visitante" para capturar imagem da Câmera 1 (rosto)
+- [ ] Botão "📸 Foto Veículo" para capturar imagem da Câmera 2 (veículo/placa)
+- [ ] Botão "📸 Foto Documento" para capturar imagem de documento apresentado
+- [ ] Preview das fotos capturadas em thumbnails
+- [ ] Mostrar timestamp de cada foto capturada
+- [ ] Indicador visual quando foto é capturada com sucesso
+- [ ] Botão "❌" em cada thumbnail para excluir foto antes de salvar
+- [ ] Contador de fotos capturadas (ex: "3 fotos capturadas")
+- [ ] Fotos salvas automaticamente ao liberar/negar entrada
+- [ ] Fotos armazenadas vinculadas ao registro da visita
+- [ ] Nome dos arquivos: `{callId}_visitante.jpg`, `{callId}_veiculo.jpg`, `{callId}_documento.jpg`
+
+**Tarefas Técnicas:**
+- Capturar screenshot do elemento canvas/video das câmeras
+- Converter para base64 ou Blob
+- Armazenar temporariamente no estado durante atendimento
+- Fazer upload para storage (S3/local) ao finalizar
+- Salvar URLs das fotos no banco junto com a visita
+- Implementar preview de thumbnails
+- Adicionar evento no histórico quando foto é capturada
+- Compressão de imagem para otimizar storage
+
+---
+
 ### US-F008: Liberação de Entrada com Salvamento
 **Como** porteiro remoto  
 **Quero** liberar a entrada e salvar automaticamente todos os dados  
@@ -169,16 +232,18 @@
 **Critérios de Aceitação:**
 - [ ] Botão verde grande "Liberar Entrada e Salvar"
 - [ ] Salvar: Nome, CPF, RG, Motivo, Veículo, Placa, Apartamento, Morador, Observações
+- [ ] Salvar fotos capturadas (visitante, veículo, documento)
 - [ ] Registrar evento "Acesso liberado" com todos os detalhes
 - [ ] Adicionar à lista de "Finalizadas" com status "✅ Liberado"
 - [ ] Encerrar chamada automaticamente
-- [ ] Limpar formulário
+- [ ] Limpar formulário e fotos temporárias
 - [ ] Mostrar alerta de confirmação
 - [ ] Log completo no console para debug
 
 **Tarefas Técnicas:**
 - Validar dados obrigatórios antes de salvar
-- Salvar no banco de dados
+- Upload de fotos para storage
+- Salvar no banco de dados com URLs das fotos
 - Adicionar ao histórico de chamadas finalizadas
 - Limpar estados após finalização
 
@@ -387,6 +452,72 @@
 - Exibir informações do condomínio
 - Design destacado
 - Integrar com dados da chamada
+
+---
+
+### US-F018: Cadastro de Blocos e Apartamentos
+**Como** administrador  
+**Quero** cadastrar blocos e apartamentos dentro dos condomínios  
+**Para** organizar a estrutura habitacional e facilitar o atendimento  
+
+**Critérios de Aceitação:**
+- [ ] Seção "Gerenciar Condomínios" no menu administrativo
+- [ ] Lista de condomínios cadastrados
+- [ ] Botão "Gerenciar Blocos" para cada condomínio
+- [ ] Modal para adicionar/editar blocos:
+  - Nome do bloco (ex: "Bloco A", "Torre 1", "Edifício Sul")
+  - Quantidade de andares
+  - Apartamentos por andar
+- [ ] Sistema de geração automática de apartamentos:
+  - Exemplo: Bloco A, 10 andares, 4 aptos/andar = A-101 a A-1040
+- [ ] Lista de apartamentos gerados com opção de editar/remover
+- [ ] Cadastro de morador por apartamento:
+  - Nome completo
+  - CPF
+  - Telefone (interfone)
+  - Celular
+  - Email
+  - Observações (ex: "Sem entregas após 22h")
+- [ ] Status do morador (Ativo/Inativo)
+- [ ] Busca e filtros por bloco/apartamento
+- [ ] Importação em lote via Excel/CSV
+- [ ] Validação de dados (CPF, telefone)
+- [ ] Histórico de alterações
+
+**Tarefas Técnicas:**
+- Criar tabelas: buildings, blocks, apartments, residents
+- Interface de cadastro com validações
+- Sistema de geração automática de apartamentos
+- Formulário de cadastro de moradores
+- Sistema de busca e filtros
+- Importação de dados em massa
+- Validação de CPF e telefone
+- Log de auditoria
+
+---
+
+### US-F019: Seleção de Apartamento Melhorada
+**Como** porteiro remoto  
+**Quero** selecionar apartamentos de forma mais organizada  
+**Para** encontrar rapidamente o morador correto  
+
+**Critérios de Aceitação:**
+- [ ] Select agrupado por blocos
+- [ ] Formato: "Bloco A - 101" ao invés de apenas "A-101"
+- [ ] Busca por nome do morador
+- [ ] Filtro por bloco específico
+- [ ] Indicador de status do morador (Ativo/Inativo)
+- [ ] Exibir telefones disponíveis (interfone/celular)
+- [ ] Observações do morador visíveis na seleção
+- [ ] Ordenação alfabética por bloco e apartamento
+- [ ] Sugestão automática ao digitar
+
+**Tarefas Técnicas:**
+- Modificar componente de seleção
+- Implementar busca e filtros
+- Integrar com dados de moradores
+- Adicionar indicadores visuais
+- Sistema de sugestões
 
 ---
 
@@ -1059,6 +1190,76 @@
 
 ---
 
+### US-T011B: Botão de Pânico (API)
+**Como** sistema  
+**Quero** processar e distribuir alertas de pânico  
+**Para** acionar equipes de segurança em emergências  
+
+**Endpoint:** `POST /api/portaria/panico/acionar`
+
+**Request:**
+```json
+{
+  "operatorId": "op_123",
+  "operatorName": "João Silva",
+  "callId": "call_456", // opcional, se houver chamada ativa
+  "reason": "Situação de risco", // opcional
+  "location": {
+    "ip": "192.168.1.100",
+    "geolocation": {
+      "lat": -23.550520,
+      "lng": -46.633308
+    }
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "panicId": "panic_789",
+  "timestamp": "2025-10-09T08:45:00Z",
+  "status": "active",
+  "notificationsSent": {
+    "websocket": 5,
+    "sms": 3,
+    "whatsapp": 2
+  },
+  "recording": {
+    "started": true,
+    "recordingId": "rec_999"
+  },
+  "message": "Alerta de pânico acionado com sucesso. Equipe de segurança notificada."
+}
+```
+
+**Critérios de Aceitação:**
+- [ ] Validar operador autenticado
+- [ ] Registrar pânico no banco com timestamp preciso
+- [ ] Capturar IP e geolocalização do operador
+- [ ] Enviar notificação WebSocket para todos os supervisores online
+- [ ] Enviar SMS para contatos de emergência cadastrados
+- [ ] Enviar WhatsApp via API (Twilio/oficial)
+- [ ] Se houver chamada ativa: marcar como emergência e iniciar gravação
+- [ ] Registrar evento no histórico da chamada ativa
+- [ ] Criar log de auditoria imutável
+- [ ] Retornar confirmação com detalhes das notificações enviadas
+
+**Tarefas Técnicas:**
+- Criar endpoint POST com autenticação
+- Validar operador e sessão
+- Salvar registro na tabela `panic_alerts`
+- Enviar notificações via WebSocket (Socket.io broadcast)
+- Integrar com provedor SMS (Twilio/AWS SNS)
+- Integrar com WhatsApp API
+- Se `callId` fornecido: atualizar chamada e iniciar recording
+- Adicionar evento `panic_activated` ao histórico
+- Log imutável para compliance
+- Rate limiting para evitar abusos
+- Monitoramento de alertas falsos
+
+---
+
 ### US-T012: Detecção Automática de Placa Veicular
 **Como** sistema de visão computacional  
 **Quero** detectar e ler placa de veículo automaticamente  
@@ -1489,6 +1690,6 @@ Response: {
 ---
 
 **Documento gerado em:** 09/10/2025  
-**Versão:** 1.0  
-**Última atualização:** Layout 3 colunas com ligação para morador implementado
+**Versão:** 1.4  
+**Última atualização:** Adicionado sistema de cadastro de condomínios, blocos e apartamentos (US-F018 e US-F019)
 

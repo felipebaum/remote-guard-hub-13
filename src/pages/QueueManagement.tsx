@@ -25,7 +25,10 @@ import {
   Car,
   CreditCard,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  AlertTriangle,
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,13 +103,51 @@ const mockResidents = [
   "Roberto Silva", "Carmen Lopez", "Carlos Lima", "Julia Ferreira"
 ];
 
-// Dados para apartamentos
-const mockApartments = [
-  "101", "102", "103", "104", "105", "106", "107", "108", "109", "110",
-  "201", "202", "203", "204", "205", "206", "207", "208", "209", "210",
-  "301", "302", "303", "304", "305", "306", "307", "308", "309", "310",
-  "401", "402", "403", "404", "405", "406", "407", "408", "409", "410",
-  "501", "502", "503", "504", "505", "506", "507", "508", "509", "510"
+// Dados para apartamentos com moradores
+interface ApartmentResident {
+  apartment: string;
+  block: string;
+  residents: {
+    name: string;
+    phone: string;
+    cellphone: string;
+    status: 'active' | 'inactive';
+  }[];
+}
+
+const mockApartmentResidents: ApartmentResident[] = [
+  // Bloco A
+  { apartment: "101", block: "A", residents: [{ name: "João Silva", phone: "1234", cellphone: "(11) 99999-9999", status: "active" }, { name: "Maria Silva", phone: "1234", cellphone: "(11) 99999-9998", status: "active" }] },
+  { apartment: "102", block: "A", residents: [{ name: "Pedro Costa", phone: "1235", cellphone: "(11) 88888-8888", status: "active" }] },
+  { apartment: "103", block: "A", residents: [{ name: "Ana Oliveira", phone: "1236", cellphone: "(11) 77777-7777", status: "active" }, { name: "Carlos Oliveira", phone: "1236", cellphone: "(11) 77777-7776", status: "active" }] },
+  { apartment: "104", block: "A", residents: [{ name: "Roberto Santos", phone: "1237", cellphone: "(11) 66666-6666", status: "inactive" }] },
+  { apartment: "105", block: "A", residents: [] },
+  { apartment: "201", block: "A", residents: [{ name: "Carmen Lopez", phone: "2234", cellphone: "(11) 55555-5555", status: "active" }] },
+  { apartment: "202", block: "A", residents: [{ name: "Julia Ferreira", phone: "2235", cellphone: "(11) 44444-4444", status: "active" }] },
+  { apartment: "203", block: "A", residents: [] },
+  
+  // Bloco B
+  { apartment: "101", block: "B", residents: [{ name: "Carlos Lima", phone: "3234", cellphone: "(11) 33333-3333", status: "active" }] },
+  { apartment: "102", block: "B", residents: [{ name: "Fernanda Costa", phone: "3235", cellphone: "(11) 22222-2222", status: "active" }] },
+  { apartment: "103", block: "B", residents: [] },
+  { apartment: "104", block: "B", residents: [{ name: "Ricardo Alves", phone: "3237", cellphone: "(11) 11111-1111", status: "inactive" }] },
+  { apartment: "201", block: "B", residents: [{ name: "Patricia Mendes", phone: "4234", cellphone: "(11) 10101-1010", status: "active" }] },
+  { apartment: "202", block: "B", residents: [] },
+  
+  // Bloco C
+  { apartment: "101", block: "C", residents: [{ name: "Lucas Pereira", phone: "5234", cellphone: "(11) 90909-9090", status: "active" }] },
+  { apartment: "102", block: "C", residents: [{ name: "Mariana Souza", phone: "5235", cellphone: "(11) 80808-8080", status: "active" }] },
+  { apartment: "103", block: "C", residents: [{ name: "Gabriel Santos", phone: "5236", cellphone: "(11) 70707-7070", status: "active" }] },
+  { apartment: "201", block: "C", residents: [] },
+  
+  // Bloco D
+  { apartment: "101", block: "D", residents: [{ name: "Amanda Silva", phone: "6234", cellphone: "(11) 60606-6060", status: "active" }] },
+  { apartment: "102", block: "D", residents: [] },
+  { apartment: "103", block: "D", residents: [{ name: "Bruno Costa", phone: "6236", cellphone: "(11) 50505-5050", status: "inactive" }] },
+  
+  // Bloco E
+  { apartment: "101", block: "E", residents: [{ name: "Camila Oliveira", phone: "7234", cellphone: "(11) 40404-4040", status: "active" }] },
+  { apartment: "102", block: "E", residents: [] },
 ];
 
 const mockBlocks = ["A", "B", "C", "D", "E"];
@@ -131,7 +172,7 @@ const generateMockCall = (): Call => {
     case "elevator":
       callerName = `Elevador - ${building}`;
       callerInfo = `Torre ${Math.floor(Math.random() * 3) + 1}`;
-      apartment = `Apto ${mockApartments[Math.floor(Math.random() * mockApartments.length)]}`;
+      apartment = `Apto ${mockApartmentResidents[Math.floor(Math.random() * mockApartmentResidents.length)].apartment}`;
       break;
     case "main_gate":
       callerName = `Portaria Principal - ${building}`;
@@ -141,7 +182,7 @@ const generateMockCall = (): Call => {
     case "resident_call":
       callerName = resident;
       callerInfo = building;
-      apartment = `Apto ${mockApartments[Math.floor(Math.random() * mockApartments.length)]}`;
+      apartment = `Apto ${mockApartmentResidents[Math.floor(Math.random() * mockApartmentResidents.length)].apartment}`;
       break;
   }
   
@@ -162,7 +203,7 @@ const generateMockCall = (): Call => {
 // Interface para eventos do histórico
 interface CallEvent {
   timestamp: Date;
-  type: "call_started" | "calling_resident" | "resident_answered" | "resident_rejected" | "on_hold" | "resumed" | "access_granted" | "access_denied" | "call_ended" | "observation_added";
+  type: "call_started" | "calling_resident" | "resident_answered" | "resident_rejected" | "on_hold" | "resumed" | "access_granted" | "access_denied" | "call_ended" | "observation_added" | "panic_activated";
   description: string;
   duration?: number;
 }
@@ -172,6 +213,7 @@ interface CallWithHistory extends Call {
   events: CallEvent[];
   residentCallDuration?: number;
   residentCallStartTime?: Date;
+  moradorElevatorCallDuration?: number;
   totalDuration?: number;
   finalStatus?: "granted" | "denied" | "missed";
 }
@@ -209,6 +251,10 @@ export default function QueueManagement() {
   const [residentCallDuration, setResidentCallDuration] = useState(0);
   const [isOnCallWithResident, setIsOnCallWithResident] = useState(false);
   const [residentCallStartTime, setResidentCallStartTime] = useState<Date | null>(null);
+  
+  // Timer para chamadas de morador/elevador (inicia automaticamente ao atender)
+  const [moradorElevatorCallDuration, setMoradorElevatorCallDuration] = useState(0);
+  const [moradorElevatorCallStartTime, setMoradorElevatorCallStartTime] = useState<Date | null>(null);
   const [currentCallEvents, setCurrentCallEvents] = useState<CallEvent[]>([]);
   const [activeSection, setActiveSection] = useState<"waiting" | "missed" | "completed">("waiting");
   const [showQuickCallDialog, setShowQuickCallDialog] = useState(false);
@@ -219,6 +265,32 @@ export default function QueueManagement() {
     resident: "",
     directNumber: ""
   });
+  const [showPanicDialog, setShowPanicDialog] = useState(false);
+  const [panicReason, setPanicReason] = useState("");
+  
+  // Estados para captura de fotos
+  const [capturedPhotos, setCapturedPhotos] = useState<{
+    visitor?: { data: string; timestamp: Date };
+    vehicle?: { data: string; timestamp: Date };
+    document?: { data: string; timestamp: Date };
+  }>({});
+  
+  // Estados para visualização maximizada
+  const [maximizedView, setMaximizedView] = useState<{
+    type: 'camera' | 'photo' | null;
+    subtype?: 'main' | 'camera1' | 'camera2' | 'visitor' | 'vehicle' | 'document';
+    data?: string;
+  }>({ type: null });
+
+  // Estados para busca avançada de apartamentos/moradores
+  const [apartmentSearchTerm, setApartmentSearchTerm] = useState("");
+  const [selectedBlock, setSelectedBlock] = useState<string>("");
+  const [showApartmentSearch, setShowApartmentSearch] = useState(false);
+  
+  // Estados para busca avançada na seção MORADOR (liberação/negação)
+  const [residentSearchTerm, setResidentSearchTerm] = useState("");
+  const [selectedResidentBlock, setSelectedResidentBlock] = useState<string>("");
+  const [showResidentSearch, setShowResidentSearch] = useState(false);
 
   // Simular chegada de novas chamadas
   useEffect(() => {
@@ -232,17 +304,29 @@ export default function QueueManagement() {
     return () => clearInterval(interval);
   }, []);
 
-  // Timer para duração da chamada ativa (interfone)
+  // Fechar modal maximizado com ESC
   useEffect(() => {
-    if (activeCall && !isOnHold && !isOnCallWithResident) {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && maximizedView.type) {
+        setMaximizedView({ type: null });
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [maximizedView.type]);
+
+  // Timer para duração da chamada ativa (sempre ativo quando há chamada)
+  useEffect(() => {
+    if (activeCall) {
       const interval = setInterval(() => {
         setCallDuration(prev => prev + 1);
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [activeCall, isOnHold, isOnCallWithResident]);
+  }, [activeCall]);
 
-  // Timer para duração da chamada com morador
+  // Timer para duração da chamada com morador (quando você liga para ele)
   useEffect(() => {
     if (isOnCallWithResident && residentCallStartTime) {
       const interval = setInterval(() => {
@@ -253,6 +337,17 @@ export default function QueueManagement() {
     }
   }, [isOnCallWithResident, residentCallStartTime]);
 
+  // Timer para chamadas de morador/elevador (quando eles ligam para você)
+  useEffect(() => {
+    if (activeCall && (activeCall.type === "resident_call" || activeCall.type === "elevator") && moradorElevatorCallStartTime) {
+      const interval = setInterval(() => {
+        const duration = Math.floor((Date.now() - moradorElevatorCallStartTime.getTime()) / 1000);
+        setMoradorElevatorCallDuration(duration);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [activeCall, moradorElevatorCallStartTime]);
+
   // Alternar cenas do vídeo a cada 5 segundos
   useEffect(() => {
     if (activeCall?.hasVideo && isVideoEnabled) {
@@ -262,6 +357,70 @@ export default function QueueManagement() {
       return () => clearInterval(interval);
     }
   }, [activeCall?.hasVideo, isVideoEnabled]);
+
+  // Funções para busca avançada de apartamentos/moradores
+  const getFilteredApartments = () => {
+    let filtered = mockApartmentResidents;
+
+    // Filtrar por bloco
+    if (selectedBlock) {
+      filtered = filtered.filter(apt => apt.block === selectedBlock);
+    }
+
+    // Filtrar por nome de morador
+    if (apartmentSearchTerm) {
+      filtered = filtered.filter(apt => 
+        apt.residents.some(resident => 
+          resident.name.toLowerCase().includes(apartmentSearchTerm.toLowerCase())
+        )
+      );
+    }
+
+    return filtered;
+  };
+
+  const handleApartmentSelect = (apartment: string, block: string, residentName?: string) => {
+    setVisitData(prev => ({ 
+      ...prev, 
+      apartment: `${block}-${apartment}`,
+      residentName: residentName || prev.residentName
+    }));
+    setShowApartmentSearch(false);
+    setApartmentSearchTerm("");
+    setSelectedBlock("");
+  };
+
+  // Funções para busca avançada na seção MORADOR
+  const getFilteredResidentApartments = () => {
+    let filtered = mockApartmentResidents;
+
+    // Filtrar por bloco
+    if (selectedResidentBlock) {
+      filtered = filtered.filter(apt => apt.block === selectedResidentBlock);
+    }
+
+    // Filtrar por nome de morador
+    if (residentSearchTerm) {
+      filtered = filtered.filter(apt => 
+        apt.residents.some(resident => 
+          resident.name.toLowerCase().includes(residentSearchTerm.toLowerCase())
+        )
+      );
+    }
+
+    return filtered;
+  };
+
+  const handleResidentApartmentSelect = (apartment: string, block: string, residentName?: string) => {
+    setVisitData(prev => ({ 
+      ...prev, 
+      apartment: `${block}-${apartment}`,
+      residentName: residentName || prev.residentName
+    }));
+    setShowResidentSearch(false);
+    setResidentSearchTerm("");
+    setSelectedResidentBlock("");
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -499,6 +658,12 @@ export default function QueueManagement() {
     setCallDuration(0);
     setCurrentCallEvents([]);
     
+    // Iniciar timer específico para chamadas de morador/elevador
+    if (call.type === "resident_call" || call.type === "elevator") {
+      setMoradorElevatorCallDuration(0);
+      setMoradorElevatorCallStartTime(new Date());
+    }
+    
     // Registrar início do atendimento
     addCallEvent("call_started", `Atendimento iniciado - ${call.callerName} (${call.building})`);
     
@@ -535,6 +700,7 @@ export default function QueueManagement() {
       events: currentCallEvents,
       residentCallDuration,
       totalDuration: callDuration,
+      moradorElevatorCallDuration: moradorElevatorCallDuration,
       finalStatus: finalStatus || "missed"
     };
     
@@ -558,6 +724,8 @@ export default function QueueManagement() {
     setIsOnCallWithResident(false);
     setResidentCallStartTime(null);
     setResidentCallDuration(0);
+    setMoradorElevatorCallDuration(0);
+    setMoradorElevatorCallStartTime(null);
     setCurrentStep("data");
     setCurrentCallEvents([]);
     setReleaseProcess({ status: "pending", documentsCollected: false, photosTaken: false });
@@ -574,6 +742,9 @@ export default function QueueManagement() {
   const handleGrantAccess = () => {
     if (!activeCall) return;
     
+    // Contar fotos capturadas
+    const photoCount = Object.keys(capturedPhotos).length;
+    
     // Salvar todos os dados do visitante
     const visitInfo = {
       name: visitData.fullName || visitData.callerName,
@@ -585,10 +756,17 @@ export default function QueueManagement() {
       apartment: visitData.apartment,
       resident: visitData.residentName,
       building: activeCall.building,
-      notes: visitData.notes
+      notes: visitData.notes,
+      photos: {
+        visitor: capturedPhotos.visitor?.data,
+        vehicle: capturedPhotos.vehicle?.data,
+        document: capturedPhotos.document?.data,
+        count: photoCount
+      }
     };
     
     console.log("Dados salvos:", visitInfo);
+    console.log(`📸 ${photoCount} foto(s) anexada(s)`);
     
     // Salvar observações no histórico
     if (visitData.notes) {
@@ -596,17 +774,23 @@ export default function QueueManagement() {
     }
     
     // Registrar liberação com detalhes
-    addCallEvent("access_granted", `Acesso liberado para ${visitData.fullName || visitData.callerName} - ${visitData.cpf || 'sem CPF'} - Destino: ${visitData.apartment || 'não informado'}`);
+    addCallEvent("access_granted", `Acesso liberado para ${visitData.fullName || visitData.callerName} - ${visitData.cpf || 'sem CPF'} - Destino: ${visitData.apartment || 'não informado'} - ${photoCount} foto(s)`);
     
     // Finalizar com sucesso
     handleEndCall("granted");
     
-    alert("✅ Acesso liberado e dados salvos com sucesso!");
+    // Limpar fotos após salvar
+    setCapturedPhotos({});
+    
+    alert(`✅ Acesso liberado e dados salvos com sucesso!\n📸 ${photoCount} foto(s) salva(s)`);
   };
   
   // Função para negar entrada, salvar dados e finalizar chamada
   const handleDenyAccess = () => {
     if (!activeCall) return;
+    
+    // Contar fotos capturadas
+    const photoCount = Object.keys(capturedPhotos).length;
     
     // Salvar todos os dados do visitante (mesmo negado)
     const visitInfo = {
@@ -619,10 +803,17 @@ export default function QueueManagement() {
       apartment: visitData.apartment,
       resident: visitData.residentName,
       building: activeCall.building,
-      notes: visitData.notes
+      notes: visitData.notes,
+      photos: {
+        visitor: capturedPhotos.visitor?.data,
+        vehicle: capturedPhotos.vehicle?.data,
+        document: capturedPhotos.document?.data,
+        count: photoCount
+      }
     };
     
     console.log("Dados salvos (acesso negado):", visitInfo);
+    console.log(`📸 ${photoCount} foto(s) anexada(s)`);
     
     // Salvar observações no histórico
     if (visitData.notes) {
@@ -630,12 +821,15 @@ export default function QueueManagement() {
     }
     
     // Registrar negação com detalhes
-    addCallEvent("access_denied", `Acesso negado para ${visitData.fullName || visitData.callerName} - Motivo: ${visitData.notes || 'Não autorizado'}`);
+    addCallEvent("access_denied", `Acesso negado para ${visitData.fullName || visitData.callerName} - Motivo: ${visitData.notes || 'Não autorizado'} - ${photoCount} foto(s)`);
     
     // Finalizar com negação
     handleEndCall("denied");
     
-    alert("🚫 Acesso negado e dados salvos!");
+    // Limpar fotos após salvar
+    setCapturedPhotos({});
+    
+    alert(`🚫 Acesso negado e dados salvos!\n📸 ${photoCount} foto(s) salva(s)`);
   };
 
   // Função para fazer ligação rápida
@@ -665,6 +859,120 @@ export default function QueueManagement() {
       setShowQuickCallDialog(false);
       setQuickCallData({ building: "", apartment: "", resident: "", directNumber: "" });
     }
+  };
+
+  // Função para acionar o botão de pânico
+  const handlePanicButton = () => {
+    const timestamp = new Date().toLocaleString('pt-BR');
+    const operatorName = "Admin"; // Pegar do contexto de autenticação
+    
+    // Adicionar evento ao histórico da chamada ativa (se houver)
+    if (activeCall) {
+      addCallEvent("panic_activated", `🚨 ALERTA DE PÂNICO ACIONADO - ${panicReason || "Situação de emergência"}`);
+    }
+    
+    console.log("🚨 PÂNICO ACIONADO!", {
+      timestamp,
+      operator: operatorName,
+      callId: activeCall?.id,
+      reason: panicReason,
+      location: {
+        ip: "192.168.1.100", // Seria capturado em produção
+      }
+    });
+    
+    // Em produção, aqui seria feito:
+    // - POST /api/portaria/panico/acionar
+    // - Envio de notificações WebSocket para supervisores
+    // - Envio de SMS/WhatsApp para equipe de segurança
+    // - Iniciar gravação automática se houver chamada ativa
+    
+    alert(`🚨 ALERTA DE PÂNICO ACIONADO!\n\nTimestamp: ${timestamp}\nOperador: ${operatorName}\nMotivo: ${panicReason || "Não informado"}\n\n✅ Equipe de segurança notificada!\n✅ Supervisores alertados!\n${activeCall ? '✅ Gravação iniciada!' : ''}`);
+    
+    // Fechar modal e limpar
+    setShowPanicDialog(false);
+    setPanicReason("");
+  };
+
+  // Funções para captura de fotos
+  const capturePhoto = (type: 'visitor' | 'vehicle' | 'document') => {
+    const isRetaking = !!capturedPhotos[type]; // Verifica se já existe uma foto
+    
+    // Simular captura de foto (em produção, capturaria do canvas/video)
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Simular uma imagem capturada
+    canvas.width = 640;
+    canvas.height = 480;
+    
+    if (ctx) {
+      // Fundo simulado
+      ctx.fillStyle = type === 'visitor' ? '#1e3a8a' : type === 'vehicle' ? '#15803d' : '#9a3412';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Texto simulado
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 32px Arial';
+      ctx.textAlign = 'center';
+      const labels = {
+        visitor: '👤 FOTO DO VISITANTE',
+        vehicle: '🚗 FOTO DO VEÍCULO',
+        document: '📄 FOTO DO DOCUMENTO'
+      };
+      ctx.fillText(labels[type], canvas.width / 2, canvas.height / 2 - 20);
+      
+      ctx.font = '16px Arial';
+      const now = new Date();
+      ctx.fillText(now.toLocaleString('pt-BR'), canvas.width / 2, canvas.height / 2 + 20);
+      
+      // Adicionar indicador se é uma refoto
+      if (isRetaking) {
+        ctx.font = 'bold 14px Arial';
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText('🔄 FOTO REFEITA', canvas.width / 2, canvas.height / 2 + 50);
+      }
+    }
+    
+    // Converter para base64
+    const photoData = canvas.toDataURL('image/jpeg', 0.8);
+    
+    // Salvar foto no estado
+    setCapturedPhotos(prev => ({
+      ...prev,
+      [type]: { data: photoData, timestamp: new Date() }
+    }));
+    
+    // Adicionar evento ao histórico
+    const labels = {
+      visitor: 'Visitante',
+      vehicle: 'Veículo',
+      document: 'Documento'
+    };
+    
+    const eventMessage = isRetaking 
+      ? `🔄 Foto refeita: ${labels[type]}` 
+      : `📸 Foto capturada: ${labels[type]}`;
+    
+    addCallEvent("observation_added", eventMessage);
+    
+    // Feedback visual
+    console.log(eventMessage);
+  };
+
+  const removePhoto = (type: 'visitor' | 'vehicle' | 'document') => {
+    setCapturedPhotos(prev => {
+      const updated = { ...prev };
+      delete updated[type];
+      return updated;
+    });
+    
+    const labels = {
+      visitor: 'Visitante',
+      vehicle: 'Veículo',
+      document: 'Documento'
+    };
+    addCallEvent("observation_added", `❌ Foto removida: ${labels[type]}`);
   };
 
   const handleSaveVisitData = () => {
@@ -848,12 +1156,84 @@ export default function QueueManagement() {
             <Phone className="h-4 w-4 mr-2" />
             Ligação Rápida
           </Button>
+          <Button 
+            variant="destructive"
+            onClick={() => setShowPanicDialog(true)}
+            className="h-9 bg-red-600 hover:bg-red-700"
+          >
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            Botão de Pânico
+          </Button>
           <Badge variant="outline" className="flex items-center gap-1">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             Online
           </Badge>
         </div>
       </div>
+
+      {/* Modal de Botão de Pânico */}
+      {showPanicDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowPanicDialog(false)}>
+          <Card className="w-full max-w-md border-red-500" onClick={(e) => e.stopPropagation()}>
+            <CardHeader className="bg-red-50">
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-red-600">
+                  <AlertTriangle className="h-6 w-6" />
+                  <span>Botão de Pânico</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowPanicDialog(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <Alert className="mb-4 bg-orange-50 border-orange-300">
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+                <AlertDescription className="text-orange-900">
+                  Tem certeza que deseja acionar o alerta de emergência? Esta ação notificará imediatamente a equipe de segurança e supervisores.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="panicReason" className="text-sm font-semibold">
+                    Motivo da Emergência (opcional)
+                  </Label>
+                  <Textarea 
+                    id="panicReason"
+                    placeholder="Descreva a situação de emergência..."
+                    value={panicReason}
+                    onChange={(e) => setPanicReason(e.target.value)}
+                    className="h-20 resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => {
+                      setShowPanicDialog(false);
+                      setPanicReason("");
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancelar
+                  </Button>
+                  <Button 
+                    variant="destructive"
+                    className="flex-1 bg-red-600 hover:bg-red-700"
+                    onClick={handlePanicButton}
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Confirmar Pânico
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Modal de Ligação Rápida */}
       {showQuickCallDialog && (
@@ -935,11 +1315,14 @@ export default function QueueManagement() {
                             <div className="px-2 py-1 text-xs font-semibold text-muted-foreground bg-gray-100">
                               Bloco {block}
                             </div>
-                            {mockApartments.slice(0, 10).map(apt => (
-                              <SelectItem key={`${block}-${apt}`} value={`${block}-${apt}`}>
-                                Bloco {block} - Apto {apt}
-                              </SelectItem>
-                            ))}
+                            {mockApartmentResidents
+                              .filter(apt => apt.block === block)
+                              .slice(0, 10)
+                              .map(apt => (
+                                <SelectItem key={`${block}-${apt.apartment}`} value={`${block}-${apt.apartment}`}>
+                                  Bloco {block} - Apto {apt.apartment}
+                                </SelectItem>
+                              ))}
                           </div>
                         ))}
                       </SelectContent>
@@ -994,6 +1377,69 @@ export default function QueueManagement() {
         </div>
       )}
 
+      {/* Modal de Visualização Maximizada */}
+      {maximizedView.type && (
+        <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4" onClick={() => setMaximizedView({ type: null })}>
+          <div className="relative w-full h-full max-w-7xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            {/* Header do Modal */}
+            <div className="flex items-center justify-between mb-3 bg-black/50 p-3 rounded-t-lg">
+              <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                {maximizedView.type === 'camera' ? (
+                  <>
+                    <Video className="h-5 w-5 text-cyan-400" />
+                    {maximizedView.subtype === 'main' && 'CÂM 01: ROSTO - Câmera Principal'}
+                    {maximizedView.subtype === 'camera1' && 'CÂM 02: PLACA - Veículo'}
+                    {maximizedView.subtype === 'camera2' && 'CÂM 03: ECLUSA - Área Externa'}
+                  </>
+                ) : (
+                  <>
+                    <Camera className="h-5 w-5 text-green-400" />
+                    {maximizedView.subtype === 'visitor' && '👤 Foto do Visitante'}
+                    {maximizedView.subtype === 'vehicle' && '🚗 Foto do Veículo'}
+                    {maximizedView.subtype === 'document' && '📄 Foto do Documento'}
+                  </>
+                )}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMaximizedView({ type: null })}
+                className="text-white hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="flex-1 bg-black rounded-lg overflow-hidden border-2 border-cyan-500/50 flex items-center justify-center">
+              {maximizedView.type === 'camera' ? (
+                // Visualização de câmera
+                <div className="relative w-full h-full flex items-center justify-center">
+                  {maximizedView.subtype === 'main' && renderVideoScene()}
+                  {maximizedView.subtype === 'camera1' && renderCamera1Scene()}
+                  {maximizedView.subtype === 'camera2' && renderCamera2Scene()}
+                  <div className="absolute top-4 left-4 bg-black/70 text-cyan-400 px-3 py-2 rounded text-sm font-mono">
+                    ● LIVE
+                  </div>
+                </div>
+              ) : (
+                // Visualização de foto
+                <img
+                  src={maximizedView.data}
+                  alt="Visualização maximizada"
+                  className="max-w-full max-h-full object-contain"
+                />
+              )}
+            </div>
+
+            {/* Footer com instruções */}
+            <div className="mt-3 text-center text-gray-400 text-sm bg-black/50 p-2 rounded-b-lg">
+              Pressione ESC ou clique fora para fechar • Visualização em tela cheia
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Layout 3 Colunas - Estilo Central de Portaria */}
       {activeCall && activeCall.hasVideo && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
@@ -1024,6 +1470,13 @@ export default function QueueManagement() {
                         <button className={`bg-black/70 hover:bg-black/90 p-1.5 rounded ${!isMuted ? 'text-green-400' : 'text-gray-400'}`} title="Áudio">
                           <Mic className="h-3 w-3" />
                         </button>
+                        <button 
+                          className="bg-blue-600/80 hover:bg-blue-600 text-white p-1.5 rounded" 
+                          title="Maximizar"
+                          onClick={() => setMaximizedView({ type: 'camera', subtype: 'main' })}
+                        >
+                          <Maximize2 className="h-3 w-3" />
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -1044,8 +1497,14 @@ export default function QueueManagement() {
                       <div className="absolute top-1 left-1 bg-black/70 text-green-400 px-1.5 py-0.5 rounded text-[10px] font-mono">
                         CÂM 02: PLACA
                       </div>
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Video className="h-4 w-4 text-white" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button 
+                          className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-lg"
+                          title="Maximizar"
+                          onClick={() => setMaximizedView({ type: 'camera', subtype: 'camera1' })}
+                        >
+                          <Maximize2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -1063,8 +1522,14 @@ export default function QueueManagement() {
                       <div className="absolute top-1 left-1 bg-black/70 text-green-400 px-1.5 py-0.5 rounded text-[10px] font-mono">
                         CÂM 03: ECLUSA
                       </div>
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Video className="h-4 w-4 text-white" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button 
+                          className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-lg"
+                          title="Maximizar"
+                          onClick={() => setMaximizedView({ type: 'camera', subtype: 'camera2' })}
+                        >
+                          <Maximize2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   ) : (
@@ -1074,6 +1539,210 @@ export default function QueueManagement() {
                   )}
                 </div>
               </div>
+
+              {/* Botões de Captura de Fotos */}
+              <div className="mt-3 pt-3 border-t border-gray-700">
+                <h4 className="text-[10px] font-semibold text-gray-400 mb-2 uppercase">📸 Captura de Fotos</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    size="sm"
+                    variant={capturedPhotos.visitor ? "default" : "outline"}
+                    onClick={() => capturePhoto('visitor')}
+                    className={`h-9 text-[11px] font-medium whitespace-nowrap ${
+                      capturedPhotos.visitor 
+                        ? 'bg-green-600 hover:bg-green-700 border-green-500 text-white' 
+                        : 'hover:bg-gray-800 text-gray-300'
+                    }`}
+                    title={capturedPhotos.visitor ? "Clique para refazer a foto" : "Capturar foto do visitante"}
+                  >
+                    {capturedPhotos.visitor ? (
+                      <>
+                        <RotateCcw className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                        <span>Refazer</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                        <span>Visitante</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={capturedPhotos.vehicle ? "default" : "outline"}
+                    onClick={() => capturePhoto('vehicle')}
+                    className={`h-9 text-[11px] font-medium whitespace-nowrap ${
+                      capturedPhotos.vehicle 
+                        ? 'bg-green-600 hover:bg-green-700 border-green-500 text-white' 
+                        : 'hover:bg-gray-800 text-gray-300'
+                    }`}
+                    title={capturedPhotos.vehicle ? "Clique para refazer a foto" : "Capturar foto do veículo"}
+                  >
+                    {capturedPhotos.vehicle ? (
+                      <>
+                        <RotateCcw className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                        <span>Refazer</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                        <span>Veículo</span>
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={capturedPhotos.document ? "default" : "outline"}
+                    onClick={() => capturePhoto('document')}
+                    className={`h-9 text-[11px] font-medium whitespace-nowrap ${
+                      capturedPhotos.document 
+                        ? 'bg-green-600 hover:bg-green-700 border-green-500 text-white' 
+                        : 'hover:bg-gray-800 text-gray-300'
+                    }`}
+                    title={capturedPhotos.document ? "Clique para refazer a foto" : "Capturar foto do documento"}
+                  >
+                    {capturedPhotos.document ? (
+                      <>
+                        <RotateCcw className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                        <span>Refazer</span>
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                        <span>Documento</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Preview das Fotos Capturadas */}
+              {Object.keys(capturedPhotos).length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-700">
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <h4 className="text-[11px] font-bold text-green-400 uppercase tracking-wide flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      {Object.keys(capturedPhotos).length} Foto(s) Salva(s)
+                    </h4>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {capturedPhotos.visitor && (
+                      <div className="relative group">
+                        <div className="relative overflow-hidden rounded-lg border-2 border-green-500 bg-black">
+                          <img 
+                            src={capturedPhotos.visitor.data} 
+                            alt="Visitante" 
+                            className="w-full aspect-square object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                            <button
+                              onClick={() => setMaximizedView({ type: 'photo', subtype: 'visitor', data: capturedPhotos.visitor.data })}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 shadow-lg"
+                              title="Maximizar foto"
+                            >
+                              <Maximize2 className="h-3 w-3" />
+                              Ampliar
+                            </button>
+                            <button
+                              onClick={() => capturePhoto('visitor')}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 shadow-lg"
+                              title="Refazer foto"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Refazer
+                            </button>
+                            <button
+                              onClick={() => removePhoto('visitor')}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 shadow-lg"
+                              title="Remover foto"
+                            >
+                              <X className="h-3 w-3" />
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-center text-green-400 mt-1.5 font-semibold">👤 Visitante</div>
+                      </div>
+                    )}
+                    {capturedPhotos.vehicle && (
+                      <div className="relative group">
+                        <div className="relative overflow-hidden rounded-lg border-2 border-green-500 bg-black">
+                          <img 
+                            src={capturedPhotos.vehicle.data} 
+                            alt="Veículo" 
+                            className="w-full aspect-square object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                            <button
+                              onClick={() => setMaximizedView({ type: 'photo', subtype: 'vehicle', data: capturedPhotos.vehicle.data })}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 shadow-lg"
+                              title="Maximizar foto"
+                            >
+                              <Maximize2 className="h-3 w-3" />
+                              Ampliar
+                            </button>
+                            <button
+                              onClick={() => capturePhoto('vehicle')}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 shadow-lg"
+                              title="Refazer foto"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Refazer
+                            </button>
+                            <button
+                              onClick={() => removePhoto('vehicle')}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 shadow-lg"
+                              title="Remover foto"
+                            >
+                              <X className="h-3 w-3" />
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-center text-green-400 mt-1.5 font-semibold">🚗 Veículo</div>
+                      </div>
+                    )}
+                    {capturedPhotos.document && (
+                      <div className="relative group">
+                        <div className="relative overflow-hidden rounded-lg border-2 border-green-500 bg-black">
+                          <img 
+                            src={capturedPhotos.document.data} 
+                            alt="Documento" 
+                            className="w-full aspect-square object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                            <button
+                              onClick={() => setMaximizedView({ type: 'photo', subtype: 'document', data: capturedPhotos.document.data })}
+                              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 shadow-lg"
+                              title="Maximizar foto"
+                            >
+                              <Maximize2 className="h-3 w-3" />
+                              Ampliar
+                            </button>
+                            <button
+                              onClick={() => capturePhoto('document')}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 shadow-lg"
+                              title="Refazer foto"
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Refazer
+                            </button>
+                            <button
+                              onClick={() => removePhoto('document')}
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 shadow-lg"
+                              title="Remover foto"
+                            >
+                              <X className="h-3 w-3" />
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+                        <div className="text-[10px] text-center text-green-400 mt-1.5 font-semibold">📄 Documento</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Controles da Chamada */}
               <div className="mt-3 pt-3 border-t border-gray-700">
@@ -1087,9 +1756,15 @@ export default function QueueManagement() {
                 
                 <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <div className="text-xs text-gray-400">Interfone:</div>
+                    <div className="text-xs text-gray-400">
+                      {activeCall.type === "resident_call" ? "Morador:" : 
+                       activeCall.type === "elevator" ? "Elevador:" : "Interfone:"}
+                    </div>
                     <div className={`text-sm font-mono font-bold ${isOnHold ? 'text-yellow-400' : 'text-cyan-400'}`}>
-                      {isOnHold ? '⏸️' : formatTime(callDuration)}
+                      {isOnHold ? '⏸️' : 
+                       (activeCall.type === "resident_call" || activeCall.type === "elevator") 
+                         ? formatTime(moradorElevatorCallDuration) 
+                         : formatTime(callDuration)}
                     </div>
                   </div>
                   <Badge variant={getPriorityColor(activeCall.priority)} className="text-[10px]">
@@ -1248,32 +1923,118 @@ export default function QueueManagement() {
                 <div className="bg-gray-50 p-2 rounded border">
                   <h4 className="text-[10px] font-semibold text-gray-700 mb-1.5 uppercase">🏠 Morador</h4>
                   <div className="space-y-1.5">
-                    <Select 
-                      value={visitData.apartment} 
-                      onValueChange={(value) => {
-                        setVisitData(prev => ({ ...prev, apartment: value }));
-                        const mockResident = value ? mockResidents[Math.floor(Math.random() * mockResidents.length)] : "";
-                        setVisitData(prev => ({ ...prev, residentName: mockResident }));
-                      }}
-                    >
-                      <SelectTrigger className="h-7 text-xs">
-                        <SelectValue placeholder="Selecionar Apto" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-48">
-                        {mockBlocks.map(block => (
-                          <div key={block}>
-                            <div className="px-2 py-0.5 text-[10px] font-semibold text-muted-foreground bg-gray-100">
-                              Bloco {block}
+                    <div className="space-y-2">
+                      <div className="flex gap-1">
+                        <Input
+                          value={visitData.apartment}
+                          onChange={(e) => setVisitData(prev => ({ ...prev, apartment: e.target.value }))}
+                          placeholder="Apartamento (ex: A-101)"
+                          className="h-7 text-xs flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowResidentSearch(!showResidentSearch)}
+                          className="h-7 text-xs px-2"
+                        >
+                          🔍
+                        </Button>
+                      </div>
+                      
+                      {showResidentSearch && (
+                        <div className="border rounded p-2 bg-white space-y-2">
+                          <div className="grid grid-cols-1 gap-1">
+                            <div>
+                              <Label className="text-[10px]">Buscar por nome</Label>
+                              <Input
+                                value={residentSearchTerm}
+                                onChange={(e) => setResidentSearchTerm(e.target.value)}
+                                placeholder="Nome do morador..."
+                                className="h-6 text-[10px]"
+                              />
                             </div>
-                            {mockApartments.slice(0, 8).map(apt => (
-                              <SelectItem key={`${block}-${apt}`} value={`${block}-${apt}`} className="text-xs">
-                                {block}-{apt}
-                              </SelectItem>
-                            ))}
+                            <div>
+                              <Label className="text-[10px]">Filtrar por bloco</Label>
+                              <Select value={selectedResidentBlock} onValueChange={setSelectedResidentBlock}>
+                                <SelectTrigger className="h-6 text-[10px]">
+                                  <SelectValue placeholder="Todos os blocos" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">Todos os blocos</SelectItem>
+                                  {mockBlocks.map(block => (
+                                    <SelectItem key={block} value={block}>
+                                      Bloco {block}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          
+                          <div className="max-h-32 overflow-y-auto space-y-1">
+                            {getFilteredResidentApartments().map(apt => (
+                              <div key={`${apt.block}-${apt.apartment}`} className="border rounded p-1">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <div className="font-medium text-[10px]">
+                                      {apt.block}-{apt.apartment}
+                                    </div>
+                                    {apt.residents.length > 0 ? (
+                                      <div className="text-[9px] text-gray-600">
+                                        {apt.residents.map(resident => (
+                                          <div key={resident.name} className="flex items-center gap-1">
+                                            <span>{resident.name}</span>
+                                            <Badge 
+                                              variant={resident.status === 'active' ? 'default' : 'secondary'}
+                                              className="text-[8px] px-1 py-0"
+                                            >
+                                              {resident.status === 'active' ? 'Ativo' : 'Inativo'}
+                                            </Badge>
+                                            <span className="text-gray-500">({resident.phone})</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="text-[9px] text-gray-400">Vazio</div>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-1">
+                                    {apt.residents.length > 0 && (
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleResidentApartmentSelect(apt.apartment, apt.block, apt.residents[0].name)}
+                                        className="h-5 text-[9px] px-1"
+                                      >
+                                        Sel.
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            
+                            {getFilteredResidentApartments().length === 0 && (
+                              <div className="text-center py-2 text-gray-500 text-[9px]">
+                                Nenhum apartamento encontrado
+                              </div>
+                            )}
+                          </div>
+                          
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowResidentSearch(false)}
+                            className="w-full h-6 text-[10px]"
+                          >
+                            Fechar Busca
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                     
                     {visitData.apartment && (
                       <>
@@ -1333,13 +2094,6 @@ export default function QueueManagement() {
                 >
                   <XCircle className="h-4 w-4 mr-2" />
                   Negar Entrada e Salvar
-                </Button>
-                
-                <Button
-                  className="w-full h-10 bg-amber-500 hover:bg-amber-600 text-white font-semibold border-2 border-amber-300 animate-pulse"
-                  onClick={() => alert("Alerta de pânico ativado!")}
-                >
-                  🚨 PÂNICO
                 </Button>
               </div>
               
@@ -1492,25 +2246,118 @@ export default function QueueManagement() {
                         
                         <div>
                           <Label htmlFor="apartment" className="text-xs">Apartamento</Label>
-                          <Select value={visitData.apartment} onValueChange={(value) => setVisitData(prev => ({ ...prev, apartment: value }))}>
-                            <SelectTrigger className="h-8 text-sm">
-                              <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {mockBlocks.map(block => (
-                                <div key={block}>
-                                  <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">
-                                    Bloco {block}
+                          <div className="space-y-2">
+                            <div className="flex gap-2">
+                              <Input
+                                value={visitData.apartment}
+                                onChange={(e) => setVisitData(prev => ({ ...prev, apartment: e.target.value }))}
+                                placeholder="Apartamento (ex: A-101)"
+                                className="h-8 text-sm flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowApartmentSearch(!showApartmentSearch)}
+                                className="h-8 text-xs"
+                              >
+                                🔍 Buscar
+                              </Button>
+                            </div>
+                            
+                            {showApartmentSearch && (
+                              <div className="border rounded-lg p-3 bg-white space-y-3">
+                                <div className="grid grid-cols-1 gap-2">
+                                  <div>
+                                    <Label className="text-xs">Buscar por nome</Label>
+                                    <Input
+                                      value={apartmentSearchTerm}
+                                      onChange={(e) => setApartmentSearchTerm(e.target.value)}
+                                      placeholder="Digite o nome do morador..."
+                                      className="h-7 text-xs"
+                                    />
                                   </div>
-                                  {mockApartments.map(apt => (
-                                    <SelectItem key={`${block}-${apt}`} value={`${block}-${apt}`}>
-                                      {block}-{apt}
-                                    </SelectItem>
-                                  ))}
+                                  <div>
+                                    <Label className="text-xs">Filtrar por bloco</Label>
+                                    <Select value={selectedBlock} onValueChange={setSelectedBlock}>
+                                      <SelectTrigger className="h-7 text-xs">
+                                        <SelectValue placeholder="Todos os blocos" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="">Todos os blocos</SelectItem>
+                                        {mockBlocks.map(block => (
+                                          <SelectItem key={block} value={block}>
+                                            Bloco {block}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
                                 </div>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                                
+                                <div className="max-h-40 overflow-y-auto space-y-2">
+                                  {getFilteredApartments().map(apt => (
+                                    <div key={`${apt.block}-${apt.apartment}`} className="border rounded p-2">
+                                      <div className="flex items-center justify-between">
+                                        <div>
+                                          <div className="font-medium text-sm">
+                                            Bloco {apt.block} - Apto {apt.apartment}
+                                          </div>
+                                          {apt.residents.length > 0 ? (
+                                            <div className="text-xs text-gray-600">
+                                              {apt.residents.map(resident => (
+                                                <div key={resident.name} className="flex items-center gap-2">
+                                                  <span>{resident.name}</span>
+                                                  <Badge 
+                                                    variant={resident.status === 'active' ? 'default' : 'secondary'}
+                                                    className="text-xs"
+                                                  >
+                                                    {resident.status === 'active' ? 'Ativo' : 'Inativo'}
+                                                  </Badge>
+                                                  <span className="text-gray-500">({resident.phone})</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="text-xs text-gray-400">Apartamento vazio</div>
+                                          )}
+                                        </div>
+                                        <div className="flex gap-1">
+                                          {apt.residents.length > 0 && (
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => handleApartmentSelect(apt.apartment, apt.block, apt.residents[0].name)}
+                                              className="h-6 text-xs"
+                                            >
+                                              Selecionar
+                                            </Button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                  
+                                  {getFilteredApartments().length === 0 && (
+                                    <div className="text-center py-4 text-gray-500 text-sm">
+                                      Nenhum apartamento encontrado
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setShowApartmentSearch(false)}
+                                  className="w-full h-7 text-xs"
+                                >
+                                  Fechar Busca
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         
                         <div>
@@ -1788,7 +2635,11 @@ export default function QueueManagement() {
                     <div className="space-y-1 text-xs">
                       <div><span className="font-medium">Tipo:</span> {getContactTypeLabel(activeCall.type)}</div>
                       <div><span className="font-medium">Prioridade:</span> {getPriorityLabel(activeCall.priority)}</div>
-                      <div><span className="font-medium">Tempo:</span> {formatTime(callDuration)}</div>
+                      <div><span className="font-medium">Tempo:</span> {
+                        (activeCall.type === "resident_call" || activeCall.type === "elevator") 
+                          ? formatTime(moradorElevatorCallDuration) 
+                          : formatTime(callDuration)
+                      }</div>
                       {activeCall.hasVideo && (
                         <div><span className="font-medium">Vídeo:</span> {isVideoEnabled ? "Ativo" : "Off"}</div>
                       )}
@@ -2207,6 +3058,9 @@ export default function QueueManagement() {
                       <div>Duração total: {formatTime(call.totalDuration || 0)}</div>
                       {call.residentCallDuration !== undefined && call.residentCallDuration > 0 && (
                         <div>Tempo com morador: {formatTime(call.residentCallDuration)}</div>
+                      )}
+                      {call.moradorElevatorCallDuration !== undefined && call.moradorElevatorCallDuration > 0 && (
+                        <div>Tempo de atendimento: {formatTime(call.moradorElevatorCallDuration)}</div>
                       )}
                       {call.events && call.events.length > 0 && (
                         <details className="mt-2">
